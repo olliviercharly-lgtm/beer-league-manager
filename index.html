@@ -61,8 +61,8 @@
   .role-toggle button { border: none; background: transparent; color: var(--header-soft); padding: 6px 12px; cursor: pointer; font-family: inherit; }
   .role-toggle button.active { background: var(--accent); color: #1A1200; }
   .version-gear { background: transparent; border: 1px solid var(--line); color: var(--ink-soft); width: 34px; height: 34px; border-radius: 8px; cursor: pointer; font-size: 1rem; align-items: center; justify-content: center; }
-  nav.tabs { max-width: 1000px; margin: 0 auto; display: flex; gap: 4px; padding: 14px 20px 0 20px; overflow-x: auto; border-bottom: 1px solid rgba(255,255,255,0.1); }
-  nav.tabs a { text-decoration: none; padding: 8px 4px 12px 4px; margin-right: 18px; font-size: 0.95rem; font-weight: 500; color: var(--header-soft); border-bottom: 3px solid transparent; white-space: nowrap; cursor: pointer; }
+  nav.tabs { max-width: 1000px; margin: 0 auto; display: flex; gap: 2px; padding: 14px 8px 0 8px; overflow-x: auto; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  nav.tabs a { flex: 1 1 0; min-width: 0; text-align: center; text-decoration: none; padding: 8px 2px 12px 2px; font-size: clamp(0.66rem, 2.8vw, 0.95rem); font-weight: 500; color: var(--header-soft); border-bottom: 3px solid transparent; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
   nav.tabs a.active { color: var(--header-ink); border-bottom-color: var(--accent); }
 
   main { max-width: 1000px; margin: 0 auto; padding: 0 20px 60px 20px; }
@@ -238,6 +238,14 @@
   .article-card p { margin: 0 0 8px 0; font-size: 0.88rem; color: var(--ink-soft); line-height: 1.5; }
   .article-card p:last-child { margin-bottom: 0; }
   .article-body.clamped { display: -webkit-box; -webkit-line-clamp: 10; -webkit-box-orient: vertical; overflow: hidden; }
+  .article-card.featured { border-left-width: 6px; padding: 22px 24px; margin-bottom: 22px; box-shadow: 0 4px 16px rgba(16,35,45,0.08); }
+  .article-card.featured .theme-tag { font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; }
+  .article-card.featured .une-tag { display: inline-block; background: var(--accent); color: #1A1200; font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 0.68rem; letter-spacing: 0.04em; padding: 3px 10px; border-radius: 999px; margin-bottom: 8px; text-transform: uppercase; }
+  .article-card.featured h3 { font-size: clamp(1.2rem, 3vw, 1.55rem); }
+  .article-card.featured p { color: var(--ink); font-size: 0.95rem; }
+  .article-reactions { display: flex; gap: 8px; margin-top: 10px; }
+  .react-btn { border: 1px solid var(--line); background: var(--bg); border-radius: 999px; padding: 4px 10px; font-size: 0.8rem; cursor: pointer; color: var(--ink-soft); }
+  .react-btn:hover { border-color: var(--club); color: var(--club); }
   .article-toggle { display: none; margin: 8px 0 4px 0; background: none; border: none; color: var(--club); font-weight: 600; font-size: 0.82rem; cursor: pointer; padding: 0; }
 
   /* Écran de première connexion (onboarding) */
@@ -290,14 +298,16 @@
   .vote-btn { flex: 1; padding: 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); text-align: center; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: var(--ink-soft); }
   .vote-btn.for.active { background: #DCEFE3; border-color: #2E7D5B; color: #1F6B45; }
   .vote-btn.against.active { background: #FBE1E1; border-color: #B23A2E; color: #A32E2E; }
+  .vote-btn.neutral.active { background: var(--bg); border-color: var(--club); color: var(--club); }
   .vote-bar-track { display: flex; height: 10px; border-radius: 999px; overflow: hidden; margin-top: 12px; background: var(--line); }
   .vote-bar-for { background: #2E7D5B; }
   .vote-bar-against { background: #B23A2E; }
   .vote-summary { display: flex; justify-content: space-between; font-size: 0.76rem; color: var(--ink-soft); margin-top: 6px; }
   .proposal-admin-actions { display: flex; gap: 8px; margin-top: 12px; }
   .badges-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 8px; }
-  .badge-card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 14px; text-align: center; }
-  .badge-card.locked { opacity: 0.45; }
+  .badge-card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 14px; text-align: center; position: relative; }
+  .badge-card.earned { border: 2px solid #2E7D5B; box-shadow: 0 0 0 3px rgba(46,125,91,0.12); }
+  .badge-card.earned::after { content: '✓'; position: absolute; top: -8px; right: -8px; width: 22px; height: 22px; border-radius: 50%; background: #2E7D5B; color: #fff; font-size: 0.7rem; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
   .badge-icon { font-size: 1.8rem; margin-bottom: 6px; }
   .badge-title { font-weight: 600; font-size: 0.85rem; }
   .badge-desc { font-size: 0.72rem; color: var(--ink-soft); margin-top: 2px; }
@@ -525,28 +535,15 @@
 
   <!-- GAZETTE -->
   <section id="gazette" class="view">
-    <div class="gazette-masthead">
+    <div class="gazette-masthead" style="position:relative;">
+      <button class="btn ghost small admin-only" onclick="openPersonaModal()" style="position:absolute; top:0; right:0;">✏️ Ton de la rédaction</button>
       <h1>La Gazette du Dimanche</h1>
       <div class="tagline">Toute l'actualité (et les rumeurs) du Beer League Manager</div>
     </div>
-    <div class="gen-box">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
-        <strong>Générer un article</strong>
-        <button class="btn ghost small admin-only" onclick="openPersonaModal()">✏️ Ton de la rédaction</button>
-      </div>
-      <div class="onboarding-sub" style="text-align:left; margin:4px 0 14px 0;" id="persona-display"></div>
-      <label>Thématique</label>
-      <select id="gen-theme" onchange="onGenThemeChange()">
-        <option>Résumé de match</option>
-        <option>Rumeur de transfert</option>
-        <option>Interview joueur</option>
-        <option>Autre</option>
-      </select>
-      <div id="gen-context"></div>
-      <label>Instructions libres (optionnel)</label>
-      <textarea id="gen-prompt" placeholder="Ex : parle du but improbable de Marco à la 45e minute, sur un ton complot de vestiaire..."></textarea>
-      <div style="margin-top:12px;"><button class="btn" onclick="generateArticle()">Générer l'article</button></div>
+    <div style="text-align:center; margin-bottom:22px;">
+      <button class="btn" onclick="openGeneratorModal()">📰 Générer un article</button>
     </div>
+    <div class="toolbar-filters" id="article-filters" style="margin-bottom:16px;"></div>
     <div id="articles-list"></div>
   </section>
 
@@ -588,6 +585,10 @@
   <div class="modal-card" id="persona-modal-content"></div>
 </div>
 
+<div class="modal-overlay" id="generator-modal">
+  <div class="modal-card" id="generator-modal-content" style="max-width:480px;"></div>
+</div>
+
 <div class="modal-overlay" id="manage-players-modal">
   <div class="modal-card" id="manage-players-modal-content"></div>
 </div>
@@ -605,7 +606,7 @@
 </div>
 
 <div class="modal-overlay" id="badge-points-modal">
-  <div class="modal-card" id="badge-points-modal-content" style="max-width:380px;"></div>
+  <div class="modal-card" id="badge-points-modal-content" style="max-width:440px;"></div>
 </div>
 
 <script>
@@ -863,6 +864,21 @@
     renderResults();
     renderChallenges();
     renderPlayers();
+    suggestGazetteRecap(i);
+  }
+  function suggestGazetteRecap(i) {
+    customConfirm('Générer le résumé de ce match pour la Gazette ?', () => {
+      showView('gazette');
+      openGeneratorModal();
+      const themeSelect = document.getElementById('gen-theme');
+      if (themeSelect) themeSelect.value = 'Résumé de match';
+      onGenThemeChange();
+      const matchSelect = document.getElementById('gen-match');
+      if (matchSelect) matchSelect.value = i;
+      const promptEl = document.getElementById('gen-prompt');
+      if (promptEl) promptEl.value = '';
+      generateArticle();
+    }, { confirmLabel: '📰 Générer', confirmColor: '#2E7D5B' });
   }
   function defiStatusLabel(state) {
     if (state.noir && state.blanc) return `Validé — ${teamName('noir')} & ${teamName('blanc')}`;
@@ -1419,8 +1435,9 @@
     { key: 'goals100', icon: '🥉', title: 'Cap des 100 buts', desc: 'Première équipe à atteindre 100 buts sur la saison', pts: 100 },
     { key: 'goals200', icon: '🥈', title: 'Cap des 200 buts', desc: 'Première équipe à atteindre 200 buts sur la saison', pts: 200 },
     { key: 'goals300', icon: '🥇', title: 'Cap des 300 buts', desc: 'Première équipe à atteindre 300 buts sur la saison', pts: 300 },
-    { key: 'blackstreak', icon: '🤡', title: 'Série Noire', desc: '5 défaites consécutives (ça arrive aux meilleurs)', pts: 0 },
+    { key: 'blackstreak', icon: '🤡', title: 'Série Noire', desc: '5 défaites consécutives (ça arrive aux meilleurs)', pts: -200 },
   ];
+  const badgeOverrides = { noir: {}, blanc: {} };
   function firstTeamToReachGoals(threshold) {
     const chronological = [...results].reverse();
     let cumNoir = 0, cumBlanc = 0;
@@ -1455,7 +1472,7 @@
   function teamDefisForMatch(r, team) {
     return r.defis.filter(d => d.team === team);
   }
-  function isBadgeEarned(key, team) {
+  function isBadgeEarnedAuto(key, team) {
     const s = computeStreaks(team);
     if (key === 'streak5') return s.maxWin >= 5;
     if (key === 'grandchelem') return hasGrandChelem(team);
@@ -1467,6 +1484,11 @@
     if (key === 'blackstreak') return s.maxLoss >= 5;
     return false;
   }
+  function isBadgeEarned(key, team) {
+    const override = badgeOverrides[team] ? badgeOverrides[team][key] : undefined;
+    if (override !== undefined) return override;
+    return isBadgeEarnedAuto(key, team);
+  }
   function renderBadges() {
     const el = document.getElementById('badges-list');
     if (!el) return;
@@ -1475,31 +1497,51 @@
       <div class="badges-grid">
         ${badgeDefs.map(b => {
           const earned = isBadgeEarned(b.key, team);
+          const forced = badgeOverrides[team] && badgeOverrides[team][b.key] !== undefined;
           return `
-          <div class="badge-card ${earned ? '' : 'locked'}">
+          <div class="badge-card ${earned ? 'earned' : ''}">
             <div class="badge-icon">${b.icon}</div>
             <div class="badge-title">${b.title}</div>
             <div class="badge-desc">${b.desc}</div>
-            ${b.pts !== undefined ? `<div class="badge-desc" style="font-weight:700; color:var(--club); margin-top:4px; display:flex; align-items:center; justify-content:center; gap:5px;">+${b.pts} pts <span class="admin-only" style="cursor:pointer;" onclick="openEditBadgePoints('${b.key}')" title="Modifier les points">✏️</span></div>` : ''}
+            ${forced ? `<div class="badge-desc admin-only" style="color:#8A5B00; font-weight:700; margin-top:2px;">🔧 statut forcé</div>` : ''}
+            ${b.pts !== undefined ? `<div class="badge-desc" style="font-weight:700; color:${b.pts < 0 ? '#C0392B' : 'var(--club)'}; margin-top:4px; display:flex; align-items:center; justify-content:center; gap:5px;">${b.pts >= 0 ? '+' : ''}${b.pts} pts <span class="admin-only" style="cursor:pointer;" onclick="openEditBadgePoints('${b.key}','${team}')" title="Modifier">✏️</span></div>` : ''}
           </div>`;
         }).join('')}
       </div>`).join('');
   }
 
   let editingBadgeKey = null;
-  function openEditBadgePoints(key) {
+  let editingBadgeTeam = null;
+  let pendingBadgeStatus = 'auto';
+  function selectBadgeStatus(status) {
+    pendingBadgeStatus = status;
+    document.querySelectorAll('#badge-status-row .vote-btn').forEach(elm => elm.classList.remove('active'));
+    const target = document.querySelector(`#badge-status-row .vote-btn[data-status="${status}"]`);
+    if (target) target.classList.add('active');
+  }
+  function openEditBadgePoints(key, team) {
     editingBadgeKey = key;
+    editingBadgeTeam = team;
     const b = badgeDefs.find(bb => bb.key === key);
+    const override = badgeOverrides[team] ? badgeOverrides[team][key] : undefined;
+    pendingBadgeStatus = override === true ? 'earned' : override === false ? 'locked' : 'auto';
+    const autoEarned = isBadgeEarnedAuto(key, team);
     document.getElementById('badge-points-modal-content').innerHTML = `
       <div class="modal-head">
         <div class="modal-icon" style="background:#DCEAF7;">${b.icon}</div>
-        <h2>Points du<br>badge</h2>
+        <h2>Modifier<br>le badge</h2>
         <button class="modal-close" onclick="closeBadgePointsModal()">✕</button>
       </div>
-      <div class="modal-sub">${b.title}</div>
+      <div class="modal-sub">${b.title} — ${teamName(team)}</div>
       <div class="modal-body">
         <div class="custom-label" style="margin-top:0;">Points attribués</div>
-        <input type="number" id="badge-points-input" value="${b.pts}" min="0">
+        <input type="number" id="badge-points-input" value="${b.pts}">
+        <div class="custom-label">Statut pour ${teamName(team)}</div>
+        <div class="proposal-vote-row" id="badge-status-row">
+          <div class="vote-btn neutral ${pendingBadgeStatus === 'auto' ? 'active' : ''}" data-status="auto" onclick="selectBadgeStatus('auto')">🤖 Auto<br><span style="font-weight:400; font-size:0.72rem;">(${autoEarned ? 'validé' : 'non validé'})</span></div>
+          <div class="vote-btn for ${pendingBadgeStatus === 'earned' ? 'active' : ''}" data-status="earned" onclick="selectBadgeStatus('earned')">✅ Validé</div>
+          <div class="vote-btn against ${pendingBadgeStatus === 'locked' ? 'active' : ''}" data-status="locked" onclick="selectBadgeStatus('locked')">🚫 Non validé</div>
+        </div>
       </div>
       <div class="modal-actions">
         <div class="modal-actions-row">
@@ -1512,11 +1554,18 @@
   function closeBadgePointsModal() {
     document.getElementById('badge-points-modal').classList.remove('open');
     editingBadgeKey = null;
+    editingBadgeTeam = null;
   }
   function saveBadgePoints() {
     const b = badgeDefs.find(bb => bb.key === editingBadgeKey);
     const val = parseInt(document.getElementById('badge-points-input').value, 10);
     if (b) b.pts = isNaN(val) ? b.pts : val;
+    if (editingBadgeTeam) {
+      if (!badgeOverrides[editingBadgeTeam]) badgeOverrides[editingBadgeTeam] = {};
+      if (pendingBadgeStatus === 'earned') badgeOverrides[editingBadgeTeam][editingBadgeKey] = true;
+      else if (pendingBadgeStatus === 'locked') badgeOverrides[editingBadgeTeam][editingBadgeKey] = false;
+      else delete badgeOverrides[editingBadgeTeam][editingBadgeKey];
+    }
     closeBadgePointsModal();
     renderChallenges();
   }
@@ -1701,9 +1750,27 @@
     renderChallenges();
   }
 
+  const articleThemes = ['Résumé de match', 'Rumeur de transfert', 'Interview joueur', 'Autre'];
+  const reactionDefs = [ { key: 'clap', emoji: '👏' }, { key: 'fire', emoji: '🔥' }, { key: 'laugh', emoji: '😂' } ];
+  let articleFilterTheme = 'Tous';
+  function setArticleFilter(theme) { articleFilterTheme = theme; renderArticles(); }
+  function renderArticleFilters() {
+    const el = document.getElementById('article-filters');
+    if (!el) return;
+    const themesPresent = ['Tous', ...articleThemes];
+    el.innerHTML = themesPresent.map(t => `<span class="filter-pill ${articleFilterTheme === t ? 'active' : ''}" onclick="setArticleFilter('${t}')">${t}</span>`).join('');
+  }
   function renderArticles() {
-    document.getElementById('articles-list').innerHTML = articles.map((a, idx) => `
-      <div class="article-card">
+    renderArticleFilters();
+    const filtered = articles
+      .map((a, i) => ({ a, i }))
+      .filter(({ a }) => articleFilterTheme === 'Tous' || a.theme === articleFilterTheme);
+    document.getElementById('articles-list').innerHTML = filtered.map(({ a, i: idx }, pos) => {
+      if (!a.reactions) a.reactions = {};
+      const featured = pos === 0;
+      return `
+      <div class="article-card ${featured ? 'featured' : ''}">
+        ${featured ? `<div class="une-tag">📌 À la une</div>` : ''}
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
           <div class="theme-tag">${a.theme}</div>
           <div style="display:flex; gap:8px;">
@@ -1714,9 +1781,22 @@
         <h3>${a.title}</h3>
         <div class="article-body clamped" id="article-body-${idx}">${a.paragraphs.map(p => `<p>${p}</p>`).join('')}</div>
         <button class="article-toggle" id="article-toggle-${idx}" onclick="toggleArticleExpand(${idx})">Voir plus ↓</button>
+        <div class="article-reactions">
+          ${reactionDefs.map(r => `<button class="react-btn" id="react-${idx}-${r.key}" onclick="reactToArticle(${idx},'${r.key}')">${r.emoji} ${a.reactions[r.key] || 0}</button>`).join('')}
+        </div>
         <div class="by">${a.by}</div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
     checkArticlesOverflow();
+  }
+  function reactToArticle(idx, key) {
+    const a = articles[idx];
+    if (!a) return;
+    if (!a.reactions) a.reactions = {};
+    a.reactions[key] = (a.reactions[key] || 0) + 1;
+    const def = reactionDefs.find(r => r.key === key);
+    const btn = document.getElementById(`react-${idx}-${key}`);
+    if (btn && def) btn.textContent = `${def.emoji} ${a.reactions[key]}`;
   }
   function shareArticleWhatsApp(idx) {
     const a = articles[idx];
@@ -1759,8 +1839,10 @@
     renderGenContext();
   }
   function renderGenContext() {
-    const theme = document.getElementById('gen-theme').value;
+    const themeEl = document.getElementById('gen-theme');
     const el = document.getElementById('gen-context');
+    if (!themeEl || !el) return;
+    const theme = themeEl.value;
     if (theme === 'Résumé de match') {
       el.innerHTML = `
         <label>Match concerné</label>
@@ -1807,14 +1889,17 @@
   }
 
   let confirmCallback = null;
-  function customConfirm(message, onYes) {
+  function customConfirm(message, onYes, opts) {
     confirmCallback = onYes;
+    const label = (opts && opts.confirmLabel) || 'Confirmer';
+    const color = (opts && opts.confirmColor) || '#B23A2E';
+    const cancelLabel = (opts && opts.cancelLabel) || 'Annuler';
     document.getElementById('confirm-modal-content').innerHTML = `
       <div class="modal-body" style="padding-top:22px;">
         <p style="font-size:0.92rem; margin:0 0 18px 0;">${message}</p>
         <div class="modal-actions-row">
-          <button class="btn-ghost-modal" onclick="closeCustomConfirm()">Annuler</button>
-          <button class="btn-sheet-confirm" style="background:#B23A2E;" onclick="runCustomConfirm()">Confirmer</button>
+          <button class="btn-ghost-modal" onclick="closeCustomConfirm()">${cancelLabel}</button>
+          <button class="btn-sheet-confirm" style="background:${color};" onclick="runCustomConfirm()">${label}</button>
         </div>
       </div>`;
     document.getElementById('confirm-modal').classList.add('open');
@@ -1830,6 +1915,7 @@
   }
 
   function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function pickN(arr, n) { const copy = [...arr]; const out = []; while (copy.length && out.length < n) { out.push(copy.splice(Math.floor(Math.random() * copy.length), 1)[0]); } return out; }
 
   let gazettePersona = "Journaliste sportif à la plume aiguisée, la vanne facile et le sens de la formule — parodie assumée de la presse sportive, jamais méchant, toujours un peu moqueur.";
   function renderPersonaDisplay() {
@@ -1889,10 +1975,22 @@
 
       if (r.present && r.present.length) {
         const mvp = pick(r.present.map(name => players.find(p => p.name === name)).filter(Boolean));
-        if (mvp) paragraphs.push(pick([
-          `${mvp.firstName} ${mvp.lastName} repart avec le titre officieux d'homme (ou femme) du match, décerné par un jury composé exclusivement de lui-même.`,
-          `Mention spéciale à ${mvp.firstName} ${mvp.lastName}, dont le style « ${mvp.style || 'indéfinissable'} » a fait au moins une victime : lui-même, à bout de souffle dès la deuxième période.`,
-        ]));
+        if (mvp) {
+          paragraphs.push(pick([
+            `${mvp.firstName} ${mvp.lastName} repart avec le titre officieux d'homme (ou femme) du match, décerné par un jury composé exclusivement de lui-même.`,
+            `Mention spéciale à ${mvp.firstName} ${mvp.lastName}, dont le style « ${mvp.style || 'indéfinissable'} » a fait au moins une victime : lui-même, à bout de souffle dès la deuxième période.`,
+          ]));
+          const mvpExtras = [];
+          if (mvp.palmares && mvp.palmares.length) {
+            const t = pick(mvp.palmares);
+            mvpExtras.push(`Pour la petite histoire, ${mvp.firstName} garde déjà « ${t.trophy} »${t.year ? ' (' + t.year + ')' : ''} dans son armoire à trophées — un vrai palmarès de dimanche soir.`);
+          }
+          if (mvp.notes && mvp.notes.length) {
+            const n = pick(mvp.notes);
+            mvpExtras.push(`Autre fait marquant sur ${mvp.firstName} : ${n.text.charAt(0).toLowerCase()}${n.text.slice(1)}.`);
+          }
+          if (mvpExtras.length) paragraphs.push(pick(mvpExtras));
+        }
       }
 
       if (r.highlights.length) paragraphs.push(pick([
@@ -1918,6 +2016,19 @@
         `Avec un style « ${p0.style || 'mystère total'} » et ${s0.matches} match${s0.matches > 1 ? 's' : ''} déjà au compteur cette saison (${s0.ratio}% de victoires), un tel transfert ferait clairement du bruit — au minimum dans le groupe WhatsApp de l'équipe.`,
         `Le principal intéressé n'a ni confirmé ni démenti, se contentant d'un sourire énigmatique et d'un deuxième service au bar. Un silence qui, dans le milieu très feutré du hockey loisir, vaut toutes les confirmations.`,
       ]));
+      const rumeurExtras = [];
+      if (p0.palmares && p0.palmares.length) {
+        const t = pick(p0.palmares);
+        rumeurExtras.push(`Un départ qui pèserait lourd : ${p0.firstName} a déjà décroché « ${t.trophy} »${t.year ? ' en ' + t.year : ''} sous le maillot ${teamName(p0.team)}.`);
+      }
+      if (p0.notes && p0.notes.length) {
+        const n = pick(p0.notes);
+        rumeurExtras.push(`Rappelons aussi que ${n.text.charAt(0).toLowerCase()}${n.text.slice(1)} — de quoi laisser un vide dans le vestiaire.`);
+      }
+      if (p0.bio && p0.bio.length) {
+        rumeurExtras.push(`Sa fiche joueur résume bien le personnage : « ${pick(p0.bio)} »`);
+      }
+      if (rumeurExtras.length) paragraphs.push(pick(rumeurExtras));
       paragraphs.push(pick([
         `Aucune conférence de presse n'est prévue. Affaire à suivre, de préférence avec un œil sur le prochain Doodle.`,
         `La Gazette suivra ce dossier brûlant avec l'attention qu'il mérite, c'est-à-dire beaucoup trop.`,
@@ -1931,6 +2042,19 @@
         `Sur ses objectifs pour la fin de saison : « Gagner des matches, valider des défis, et surtout ne pas payer la tournée. »`,
         `Interrogé sur ses ambitions, il répond sans hésiter : « Finir la saison sans forfait — et si possible, sans que Marco ne me pique la vedette. »`,
       ]));
+      const interviewExtras = [];
+      if (p0.palmares && p0.palmares.length) {
+        const t = pick(p0.palmares);
+        interviewExtras.push(`Sur son étagère à trophées trône déjà « ${t.trophy} »${t.year ? ' (' + t.year + ')' : ''} — de quoi nourrir un ego déjà bien portant.`);
+      }
+      if (p0.notes && p0.notes.length) {
+        const n = pick(p0.notes);
+        interviewExtras.push(`Petit rappel pour ceux qui l'auraient oublié : ${n.text.charAt(0).toLowerCase()}${n.text.slice(1)}.`);
+      }
+      if (p0.bio && p0.bio.length) {
+        interviewExtras.push(`Sa bio officielle donne le ton : « ${pick(p0.bio)} »`);
+      }
+      if (interviewExtras.length) paragraphs.push(pick(interviewExtras));
       paragraphs.push(pick([
         `L'interview se termine comme elle a commencé : dans la confusion générale, entre deux joueurs qui cherchent leur protège-dents.`,
         `Sur ces belles paroles, ${p0.firstName} retourne s'échauffer — ou plutôt discuter de la troisième mi-temps à venir, ce qui revient au même chez nous.`,
@@ -1945,11 +2069,44 @@
 
   let articlePreview = { open: false, theme: '', ctx: null, prompt: '', title: '', paragraphs: [] };
 
+  function openGeneratorModal() {
+    genSelectedPlayers = [];
+    document.getElementById('generator-modal-content').innerHTML = `
+      <div class="modal-head">
+        <div class="modal-icon" style="background:#FCEFD1;">📰</div>
+        <h2>Générer un<br>article</h2>
+        <button class="modal-close" onclick="closeGeneratorModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="custom-label" style="margin-top:0;">Thématique</div>
+        <select id="gen-theme" onchange="onGenThemeChange()">
+          <option>Résumé de match</option>
+          <option>Rumeur de transfert</option>
+          <option>Interview joueur</option>
+          <option>Autre</option>
+        </select>
+        <div id="gen-context"></div>
+        <div class="custom-label">Instructions libres (optionnel)</div>
+        <textarea id="gen-prompt" placeholder="Ex : parle du but improbable de Marco à la 45e minute, sur un ton complot de vestiaire..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <div class="modal-actions-row">
+          <button class="btn-ghost-modal" onclick="closeGeneratorModal()">Annuler</button>
+          <button class="btn-sheet-confirm" onclick="generateArticle()">✓ Générer l'article</button>
+        </div>
+      </div>`;
+    document.getElementById('generator-modal').classList.add('open');
+    renderGenContext();
+  }
+  function closeGeneratorModal() {
+    document.getElementById('generator-modal').classList.remove('open');
+  }
   function generateArticle() {
     const theme = document.getElementById('gen-theme').value;
     const prompt = document.getElementById('gen-prompt').value.trim();
     const ctx = buildGenContext(theme);
     if (ctx === null) return;
+    closeGeneratorModal();
     articlePreview = { open: true, theme, ctx, prompt, title: '', paragraphs: [] };
     regenerateArticlePreview();
   }
@@ -1964,7 +2121,9 @@
     document.getElementById('article-preview-modal').classList.remove('open');
   }
   function publishArticlePreview() {
-    articles.unshift({ theme: articlePreview.theme, title: articlePreview.title, paragraphs: articlePreview.paragraphs, by: "Généré par vous" });
+    const author = players.find(p => p.name === myName);
+    const byline = author ? `Par ${author.firstName} ${author.lastName}` : `Par ${myName}`;
+    articles.unshift({ theme: articlePreview.theme, title: articlePreview.title, paragraphs: articlePreview.paragraphs, by: byline, reactions: {} });
     closeArticlePreview();
     renderArticles();
     document.getElementById('gen-prompt').value = '';
@@ -2451,7 +2610,7 @@
   }
 
   checkTrainingsExpiry();
-  renderTrainings(); renderPlayers(); renderResults(); renderChallenges(); renderArticles(); renderGenContext();
+  renderTrainings(); renderPlayers(); renderResults(); renderChallenges(); renderArticles();
   renderPersonaDisplay();
   applyTeamColors();
   document.getElementById('filter-label-noir').textContent = teamName('noir') + 's';
