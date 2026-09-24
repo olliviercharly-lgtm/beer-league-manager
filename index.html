@@ -4,6 +4,13 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Beer League Manager (BLM) — squelette</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#003F6E">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BLM">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -719,6 +726,7 @@
     { id: "attaque-eclair", icon: "⚡", title: "L'Attaque Éclair", pts: 180, desc: "Marquer dès la première occasion du match." },
     { id: "3-buts", icon: "🔥", title: "Les 3 Buts sans réplique", pts: 250, desc: "Marquer trois buts sans riposte adverse." },
     { id: "symphonie", icon: "🎼", title: "La Symphonie des Attaquants", pts: 300, desc: "Faire marquer tous les attaquants sur un même match (à partir de 6 attaquants minimum)." },
+    { id: "avalanche", icon: "🥅", title: "Avalanche de buts", pts: 150, desc: "Inscrire 8 buts ou plus dans le match." },
   ];
   let challengeProposals = [
     { id: "prop-1", icon: "🧤", title: "Le Gant de Fer", desc: "Le gardien arrête 3 tirs consécutifs sans que le puck ne quitte la zone.", pts: 120, proposedBy: "Julie Rennes", votes: { "Julie Rennes": "for", "Marco Fontaine": "for", "Karim Ould": "against", "Thomas Bréal": "for" } },
@@ -862,16 +870,25 @@
     if (state.blanc) return `Validé — ${teamName('blanc')}`;
     return 'Non validé';
   }
+  function teamPointsForMatch(r, team) {
+    const teamDefis = teamDefisForMatch(r, team);
+    const sumPts = teamDefis.reduce((s, d) => {
+      const c = challengesCatalog.find(cc => cc.title === d.title);
+      return s + (c ? c.pts : 0);
+    }, 0);
+    let multiplier = 1;
+    if (teamDefis.length === 2) multiplier = 2;
+    else if (teamDefis.length >= 3) multiplier = 3;
+    return sumPts * multiplier;
+  }
   function computeClassement() {
     let noir = 0, blanc = 0;
     results.forEach(r => {
-      r.defis.forEach(d => {
-        const c = challengesCatalog.find(cc => cc.title === d.title);
-        const pts = c ? c.pts : 0;
-        if (d.team === 'noir') noir += pts; else if (d.team === 'blanc') blanc += pts;
-      });
+      noir += teamPointsForMatch(r, 'noir');
+      blanc += teamPointsForMatch(r, 'blanc');
     });
     badgeDefs.forEach(b => {
+      if (b.key === 'double' || b.key === 'triple') return;
       if (isBadgeEarned(b.key, 'noir')) noir += (b.pts || 0);
       if (isBadgeEarned(b.key, 'blanc')) blanc += (b.pts || 0);
     });
@@ -1397,8 +1414,8 @@
   const badgeDefs = [
     { key: 'streak5', icon: '🔥', title: '5 à la suite', desc: '5 victoires consécutives', pts: 200 },
     { key: 'grandchelem', icon: '🏆', title: 'Grand Chelem', desc: 'Tous les défis validés au moins une fois', pts: 500 },
-    { key: 'combo', icon: '🎯', title: 'Combo Parfait', desc: 'Au moins 2 défis validés sur le même match', pts: 150 },
-    { key: 'cavalcade', icon: '🥅', title: 'Avalanche de buts', desc: '8 buts ou plus inscrits dans un seul match', pts: 150 },
+    { key: 'double', icon: '2️⃣', title: 'Double Défi', desc: '2 défis validés sur le même match : leurs points sont doublés (x2)' },
+    { key: 'triple', icon: '3️⃣', title: 'Triple Défi', desc: '3 défis ou plus validés sur le même match : leurs points sont triplés (x3)' },
     { key: 'goals100', icon: '🥉', title: 'Cap des 100 buts', desc: 'Première équipe à atteindre 100 buts sur la saison', pts: 100 },
     { key: 'goals200', icon: '🥈', title: 'Cap des 200 buts', desc: 'Première équipe à atteindre 200 buts sur la saison', pts: 200 },
     { key: 'goals300', icon: '🥇', title: 'Cap des 300 buts', desc: 'Première équipe à atteindre 300 buts sur la saison', pts: 300 },
@@ -1435,18 +1452,15 @@
     results.forEach(r => r.defis.forEach(d => { if (d.team === team) validated.add(d.title); }));
     return challengesCatalog.length > 0 && challengesCatalog.every(c => validated.has(c.title));
   }
-  function hasComboParfait(team) {
-    return results.some(r => r.defis.filter(d => d.team === team).length >= 2);
-  }
-  function hasCavalcade(team) {
-    return results.some(r => (team === 'noir' ? r.scoreNoir : r.scoreBlanc) >= 8);
+  function teamDefisForMatch(r, team) {
+    return r.defis.filter(d => d.team === team);
   }
   function isBadgeEarned(key, team) {
     const s = computeStreaks(team);
     if (key === 'streak5') return s.maxWin >= 5;
     if (key === 'grandchelem') return hasGrandChelem(team);
-    if (key === 'combo') return hasComboParfait(team);
-    if (key === 'cavalcade') return hasCavalcade(team);
+    if (key === 'double') return results.some(r => teamDefisForMatch(r, team).length === 2);
+    if (key === 'triple') return results.some(r => teamDefisForMatch(r, team).length >= 3);
     if (key === 'goals100') return firstTeamToReachGoals(100) === team;
     if (key === 'goals200') return firstTeamToReachGoals(200) === team;
     if (key === 'goals300') return firstTeamToReachGoals(300) === team;
@@ -2444,6 +2458,12 @@
   document.getElementById('filter-label-blanc').textContent = teamName('blanc') + 's';
   document.getElementById('classement-label-noir').textContent = teamName('noir');
   document.getElementById('classement-label-blanc').textContent = teamName('blanc');
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
 </script>
 </body>
 </html>
