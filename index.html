@@ -23,6 +23,8 @@
     --team-color-blanc: #ffffff;
     --team-ink-blanc: #141414;
     --team-border-blanc: #141414;
+    --team-fill-noir: #141414;
+    --team-fill-blanc: #d5d9dd;
     --header-bg: #003F6E;
     --header-ink: #EDF3F6;
     --header-soft: #A9C4DA;
@@ -96,6 +98,8 @@
   .training-card { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--club); padding: 16px 18px; margin-bottom: 14px; }
   .training-card .row1 { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
   .training-card .date { font-weight: 600; font-size: 1.05rem; }
+  .collapse-toggle { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; border: 1px solid var(--line); color: var(--ink-soft); font-size: 0.7rem; cursor: pointer; vertical-align: middle; margin-left: 4px; }
+  .collapse-toggle:hover { border-color: var(--club); color: var(--club); }
   .training-card .loc { color: var(--ink-soft); font-size: 0.85rem; }
   .presence-count { display: flex; gap: 14px; margin: 12px 0; font-size: 0.85rem; }
   .presence-count .pill { padding: 3px 10px; border-radius: 999px; font-weight: 500; }
@@ -156,8 +160,8 @@
   .players-count { margin-top: 12px; font-size: 0.8rem; color: var(--ink-soft); }
   .players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
   .player-card { background: var(--panel); border: 1px solid var(--line); border-top: 5px solid transparent; padding: 18px; border-radius: 20px; }
-  .player-card.noir { border-top-color: var(--team-color-noir); }
-  .player-card.blanc { border-top-color: var(--team-color-blanc); }
+  .player-card.noir { border-top-color: var(--club); }
+  .player-card.blanc { border-top-color: var(--club); }
   .pc-top { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
   .pc-photo { position: relative; flex-shrink: 0; }
   .pc-photo .avatar { width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 0.95rem; }
@@ -184,7 +188,7 @@
   .stat { background: var(--panel); border: 1px solid var(--line); padding: 14px; text-align: left; }
   .stat .num { font-size: 1.8rem; font-weight: 700; }
   .stat .label { font-size: 0.78rem; color: var(--ink-soft); }
-  .result-card { background: var(--panel); border: 1px solid var(--line); padding: 16px 18px; margin-bottom: 12px; }
+  .result-card { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--club); padding: 16px 18px; margin-bottom: 12px; }
   .result-card .score-row { display: flex; align-items: center; gap: 14px; font-family: 'Oswald', sans-serif; font-size: 1.4rem; font-weight: 600; }
   .score-row .side { flex: 1; text-align: center; padding: 6px 0; }
   .score-row .side.noir { background: var(--team-color-noir); color: var(--team-ink-noir); }
@@ -200,15 +204,15 @@
   .classement { background: var(--panel); border: 1px solid var(--line); padding: 20px; margin-bottom: 22px; }
   .classement .labels { display: flex; justify-content: space-between; font-family: 'Oswald', sans-serif; font-weight: 600; margin-bottom: 10px; }
   .classement .bar { display: flex; height: 22px; overflow: hidden; }
-  .classement .bar .noir-part { background: var(--team-color-noir); }
-  .classement .bar .blanc-part { background: var(--team-color-blanc); }
+  .classement .bar .noir-part { background: var(--team-fill-noir); }
+  .classement .bar .blanc-part { background: var(--team-fill-blanc); }
   .form-row { display: flex; justify-content: space-between; margin-top: 12px; }
   .form-dots { display: flex; gap: 6px; }
   .form-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--line); }
   .form-dot.win { background: #2E7D5B; }
   .form-dot.loss { background: #B23A2E; }
   .form-dot.draw { background: #9AACB5; }
-  .challenge-card { background: var(--panel); border: 1px solid var(--line); padding: 14px 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .challenge-card { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--club); padding: 14px 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
   .challenge-card .title { font-weight: 600; }
   .challenge-card .desc { font-size: 0.82rem; color: var(--ink-soft); }
   .challenge-card .pts { font-family: 'Oswald', sans-serif; font-weight: 600; color: var(--accent); white-space: nowrap; margin-left: 8px; font-size: 0.85rem; }
@@ -248,6 +252,42 @@
   .version-sub { font-size: 0.8rem; color: var(--ink-soft); margin-top: 2px; }
   .version-invite { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--bg); border: 1px dashed var(--line); border-radius: 8px; padding: 8px 12px; margin: 10px 0; font-size: 0.85rem; }
   .version-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .manage-player-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .manage-player-row:last-child { border-bottom: none; }
+  .manage-player-name { font-weight: 600; font-size: 0.92rem; }
+  .admin-toggle { font-size: 0.78rem; font-weight: 600; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-soft); cursor: pointer; white-space: nowrap; }
+  .admin-toggle.on { background: var(--club); color: #fff; border-color: var(--club); }
+  .tuto-tabs { display: flex; gap: 8px; margin-bottom: 4px; }
+  .tuto-tab { flex: 1; padding: 8px; text-align: center; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--panel); }
+  .tuto-tab.active { background: var(--club); color: #fff; border-color: var(--club); }
+  .tuto-step { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .tuto-step:last-child { border-bottom: none; }
+  .tuto-step-num { flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: var(--bg); border: 1.5px solid var(--club); color: var(--club); display: flex; align-items: center; justify-content: center; font-weight: 700; font-family: 'Oswald', sans-serif; }
+  .tuto-step-title { font-weight: 600; font-size: 0.92rem; margin-bottom: 2px; }
+  .tuto-step-desc { font-size: 0.83rem; color: var(--ink-soft); line-height: 1.4; }
+  .notif-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .notif-row:last-of-type { border-bottom: none; }
+  .notif-row.disabled { opacity: 0.4; pointer-events: none; }
+  .notif-label { font-size: 0.88rem; font-weight: 600; }
+  .notif-sub { font-size: 0.76rem; color: var(--ink-soft); font-weight: 400; }
+  .notif-preview { background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-top: 12px; display: flex; gap: 10px; align-items: flex-start; }
+  .notif-preview-icon { width: 34px; height: 34px; border-radius: 8px; background: var(--club); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1rem; }
+  .notif-preview-title { font-weight: 700; font-size: 0.85rem; }
+  .notif-preview-text { font-size: 0.82rem; color: var(--ink-soft); margin-top: 2px; }
+  .proposal-card { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--club); border-radius: 20px; padding: 16px 18px; margin-bottom: 12px; }
+  .proposal-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .proposal-title { font-weight: 600; font-size: 0.98rem; }
+  .proposal-desc { font-size: 0.85rem; color: var(--ink-soft); margin: 4px 0; }
+  .proposal-meta { font-size: 0.75rem; color: var(--ink-soft); }
+  .proposal-vote-row { display: flex; gap: 8px; margin-top: 12px; }
+  .vote-btn { flex: 1; padding: 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); text-align: center; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: var(--ink-soft); }
+  .vote-btn.for.active { background: #DCEFE3; border-color: #2E7D5B; color: #1F6B45; }
+  .vote-btn.against.active { background: #FBE1E1; border-color: #B23A2E; color: #A32E2E; }
+  .vote-bar-track { display: flex; height: 10px; border-radius: 999px; overflow: hidden; margin-top: 12px; background: var(--line); }
+  .vote-bar-for { background: #2E7D5B; }
+  .vote-bar-against { background: #B23A2E; }
+  .vote-summary { display: flex; justify-content: space-between; font-size: 0.76rem; color: var(--ink-soft); margin-top: 6px; }
+  .proposal-admin-actions { display: flex; gap: 8px; margin-top: 12px; }
   .color-swatch-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
   .color-swatch { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--line); cursor: pointer; box-sizing: border-box; }
   .color-swatch.selected { border-color: var(--club); box-shadow: 0 0 0 2px var(--panel) inset, 0 0 0 4px var(--club); }
@@ -327,8 +367,8 @@
   .defi-status.on { color: var(--ink); }
   .defi-team-toggles { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
   .defi-team-chip { font-size: 0.72rem; font-weight: 600; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--ink-soft); cursor: pointer; text-align: center; white-space: nowrap; }
-  .defi-team-chip.noir.active { background: var(--team-color-noir); color: var(--team-ink-noir); border-color: var(--team-color-noir); }
-  .defi-team-chip.blanc.active { background: var(--team-color-blanc); color: var(--team-ink-blanc); border-color: var(--team-color-blanc); }
+  .defi-team-chip.noir.active { background: var(--team-fill-noir); color: var(--team-ink-noir); border-color: var(--team-fill-noir); }
+  .defi-team-chip.blanc.active { background: var(--team-fill-blanc); color: var(--team-ink-blanc); border-color: var(--team-fill-blanc); }
   .btn-sheet-confirm { flex: 2; padding: 12px; border-radius: 8px; border: none; background: var(--club); color: #fff; font-weight: 700; cursor: pointer; font-family: inherit; }
   .highlights-list { margin-bottom: 10px; }
   .highlight-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
@@ -356,6 +396,8 @@
         <button id="btn-admin" onclick="setRole('admin')">Vue admin</button>
       </div>
       <button class="version-gear admin-only" onclick="openVersionsModal()" title="Gérer les versions">⚙️</button>
+      <button class="version-gear" style="display:inline-flex;" onclick="openInstallHelpModal()" title="Comment installer l'app">❓</button>
+      <button class="version-gear" style="display:inline-flex;" onclick="openNotificationsModal()" title="Notifications">🔔</button>
     </div>
   </div>
   <nav class="tabs" id="tabs">
@@ -375,9 +417,9 @@
       <svg class="rink-motif" viewBox="0 0 200 200"><circle cx="100" cy="100" r="80" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="100" cy="100" r="6" fill="var(--accent)"/><line x1="100" y1="20" x2="100" y2="180" stroke="currentColor" stroke-width="1"/></svg>
       <div class="hero-inner">
         <div class="hero-label">Prochain entraînement</div>
-        <h2 class="hero-date">Dimanche 27 septembre</h2>
-        <div class="hero-sub">20h30 · Patinoire municipale</div>
-        <span class="hero-countdown">J − 7</span>
+        <h2 class="hero-date" id="hero-date">Dimanche 27 septembre</h2>
+        <div class="hero-sub" id="hero-sub">20h30 · Patinoire municipale</div>
+        <span class="hero-countdown" id="hero-countdown">J − 7</span>
       </div>
     </div>
 
@@ -408,7 +450,7 @@
   <section id="vestiaire" class="view">
     <div class="view-head">
       <div><h1>Vestiaire</h1><p>Les fiches de tous les joueurs de l'effectif.</p></div>
-      <button class="btn small admin-only" onclick="alert('Formulaire admin : gérer les rôles et équipes.')">Gérer les joueurs</button>
+      <button class="btn small admin-only" onclick="openManagePlayersModal()">Gérer les joueurs</button>
     </div>
     <div class="players-toolbar">
       <input type="search" placeholder="Rechercher par nom..." oninput="setSearch(this.value)">
@@ -454,6 +496,12 @@
       <div class="bar"><div class="noir-part" id="bar-noir"></div><div class="blanc-part" id="bar-blanc"></div></div>
     </div>
     <div id="challenges-list"></div>
+
+    <div class="view-head" style="margin-top:32px;">
+      <div><h1 style="font-size:1.3rem;">💡 Défis proposés par les joueurs</h1><p>Tout le monde peut proposer un défi — le vestiaire vote, l'admin valide.</p></div>
+      <button class="btn small" onclick="openProposeModal()">+ Proposer un défi</button>
+    </div>
+    <div id="proposals-list"></div>
   </section>
 
   <!-- GAZETTE -->
@@ -463,7 +511,11 @@
       <div class="tagline">Toute l'actualité (et les rumeurs) du Beer League Manager</div>
     </div>
     <div class="gen-box">
-      <strong>Générer un article</strong>
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+        <strong>Générer un article</strong>
+        <button class="btn ghost small admin-only" onclick="openPersonaModal()">✏️ Ton de la rédaction</button>
+      </div>
+      <div class="onboarding-sub" style="text-align:left; margin:4px 0 14px 0;" id="persona-display"></div>
       <label>Thématique</label>
       <select id="gen-theme" onchange="onGenThemeChange()">
         <option>Résumé de match</option>
@@ -513,6 +565,26 @@
   <div class="modal-card" id="versions-modal-content" style="max-width:560px;"></div>
 </div>
 
+<div class="modal-overlay" id="persona-modal">
+  <div class="modal-card" id="persona-modal-content"></div>
+</div>
+
+<div class="modal-overlay" id="manage-players-modal">
+  <div class="modal-card" id="manage-players-modal-content"></div>
+</div>
+
+<div class="modal-overlay" id="install-help-modal">
+  <div class="modal-card" id="install-help-modal-content" style="max-width:520px;"></div>
+</div>
+
+<div class="modal-overlay" id="notifications-modal">
+  <div class="modal-card" id="notifications-modal-content" style="max-width:520px;"></div>
+</div>
+
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal-card" id="confirm-modal-content" style="max-width:380px;"></div>
+</div>
+
 <script>
   const players = [
     { firstName: "Marco", lastName: "Fontaine", name: "Marco Fontaine", team: "noir", pos: "Attaquant", number: 9, style: "Sniper opportuniste",
@@ -522,7 +594,7 @@
       bio: ["Arrivé au club en 2019 après avoir usé ses patins sur toutes les patinoires de Bretagne, Marco s'est vite imposé comme le buteur numéro un de l'effectif Noir.", "Reconnaissable à sa gestuelle exagérée après chaque but, il partage son temps entre l'entraînement du dimanche et la rédaction d'excuses de plus en plus créatives pour les forfaits.", "Objectif avoué pour la saison : dépasser enfin la barre des 20 buts, et convaincre le groupe que le poney aquatique existe vraiment."] },
     { firstName: "Charly", lastName: "Ollivier", name: "Charly Ollivier", team: "noir", pos: "Attaquant", number: 66, style: "",
       height: 1.81, weight: 83, shoots: "Gauche", birthDate: "", hometown: "", joinedYear: 2021,
-      palmares: [], notes: [], bio: [], me: true },
+      palmares: [], notes: [], bio: [], me: true, superAdmin: true },
     { firstName: "Julie", lastName: "Rennes", name: "Julie Rennes", team: "noir", pos: "Défenseur", number: 4, style: "Mur défensif",
       height: 1.70, weight: 64, shoots: "Droite", birthDate: "2 juin 1995", hometown: "Nantes", joinedYear: 2020,
       palmares: [{ trophy: "Meilleure défense", year: 2024 }],
@@ -549,16 +621,18 @@
   ];
   let filters = { search: "", team: "tous", pos: "tous" };
   const trainings = [
-    { date: "Dim. 27 sept. — 20h30", loc: "Patinoire municipale" },
-    { date: "Dim. 4 oct. — 20h30", loc: "Patinoire municipale" },
+    { date: "Dim. 22 sept. — 20h30", loc: "Patinoire municipale", dateObj: new Date(2026, 8, 22, 20, 30) },
+    { date: "Dim. 27 sept. — 20h30", loc: "Patinoire municipale", dateObj: new Date(2026, 8, 27, 20, 30) },
+    { date: "Dim. 4 oct. — 20h30", loc: "Patinoire municipale", dateObj: new Date(2026, 9, 4, 20, 30) },
   ];
   const doodleRawEvents = [
-    { date: "Dim. 11 oct.", time: "20h30", loc: "Patinoire du Petit Port", title: "ENTRAINEMENT LOISIRS A" },
-    { date: "Dim. 18 oct.", time: "19h00", loc: "Patinoire municipale", title: "ENTRAINEMENT LOISIRS A" },
-    { date: "Dim. 11 oct.", time: "18h00", loc: "Patinoire municipale", title: "ENTRAINEMENT LOISIRS B" },
-    { date: "Mar. 13 oct.", time: "21h00", loc: "Patinoire du Petit Port", title: "COMPÉTITION SENIORS" },
+    { date: "Dim. 11 oct.", time: "20h30", loc: "Patinoire du Petit Port", title: "ENTRAINEMENT LOISIRS A", dateObj: new Date(2026, 9, 11, 20, 30) },
+    { date: "Dim. 18 oct.", time: "19h00", loc: "Patinoire municipale", title: "ENTRAINEMENT LOISIRS A", dateObj: new Date(2026, 9, 18, 19, 0) },
+    { date: "Dim. 11 oct.", time: "18h00", loc: "Patinoire municipale", title: "ENTRAINEMENT LOISIRS B", dateObj: new Date(2026, 9, 11, 18, 0) },
+    { date: "Mar. 13 oct.", time: "21h00", loc: "Patinoire du Petit Port", title: "COMPÉTITION SENIORS", dateObj: new Date(2026, 9, 13, 21, 0) },
   ];
   const attendanceData = [
+    { statuses: { "Marco Fontaine": "present", "Julie Rennes": "present", "Karim Ould": "present", "Thomas Bréal": "present", "Elsa Ngoy": "present", "Paul Ravier": "present", "Sofia Battaglia": "attente", "Nico Ferreira": "present" }, teamOverride: {}, posOverride: {} },
     { statuses: { "Marco Fontaine": "present", "Julie Rennes": "present", "Karim Ould": "present", "Thomas Bréal": "present", "Elsa Ngoy": "forfait", "Paul Ravier": "present", "Sofia Battaglia": "present", "Nico Ferreira": "present" }, teamOverride: {}, posOverride: {}, reasons: { "Elsa Ngoy": "Overdose de poutine et fondue savoyarde, reprise du cardio formellement déconseillée par mon médecin." } },
     { statuses: { "Marco Fontaine": "attente", "Julie Rennes": "present", "Karim Ould": "attente", "Thomas Bréal": "attente", "Elsa Ngoy": "attente", "Paul Ravier": "attente", "Sofia Battaglia": "attente", "Nico Ferreira": "attente" }, teamOverride: {}, posOverride: {} },
   ];
@@ -566,6 +640,39 @@
   let expanded = {};
   function effectiveTeam(i, p) { return attendanceData[i].teamOverride[p.name] || p.team; }
   function effectivePos(i, p) { return attendanceData[i].posOverride[p.name] || p.pos; }
+  function toggleAdmin(name) {
+    const p = players.find(pl => pl.name === name);
+    if (!p || p.superAdmin) { alert('Le super admin ne peut pas être rétrogradé depuis cet écran.'); return; }
+    p.isAdmin = !p.isAdmin;
+    renderManagePlayersModal();
+  }
+  function openManagePlayersModal() {
+    renderManagePlayersModal();
+    document.getElementById('manage-players-modal').classList.add('open');
+  }
+  function closeManagePlayersModal() { document.getElementById('manage-players-modal').classList.remove('open'); }
+  function renderManagePlayersModal() {
+    document.getElementById('manage-players-modal-content').innerHTML = `
+      <div class="modal-head">
+        <div class="modal-icon" style="background:#DCEAF7;">🛡️</div>
+        <h2>Gérer les<br>joueurs</h2>
+        <button class="modal-close" onclick="closeManagePlayersModal()">✕</button>
+      </div>
+      <div class="modal-sub">Désignez des admins pour vous assister (feuilles de match, défis, synchro Doodle...). Le super admin ne peut pas être rétrogradé.</div>
+      <div class="modal-body">
+        ${players.map(p => `
+          <div class="manage-player-row">
+            <div>
+              <div class="manage-player-name">${p.firstName} ${p.lastName}${p.superAdmin ? ' <span class="version-badge">Super admin</span>' : ''}</div>
+              <div class="version-sub">${p.pos} · ${teamName(p.team)}</div>
+            </div>
+            ${p.superAdmin
+              ? `<span class="admin-toggle on" style="opacity:0.5;cursor:default;">Admin</span>`
+              : `<span class="admin-toggle ${p.isAdmin ? 'on' : ''}" onclick="toggleAdmin('${p.name}')">${p.isAdmin ? '✓ Admin' : 'Rendre admin'}</span>`}
+          </div>`).join('')}
+      </div>`;
+  }
+
   function toggleTeam(i, name) {
     const p = players.find(pl => pl.name === name);
     const cur = effectiveTeam(i, p);
@@ -596,6 +703,9 @@
     { id: "attaque-eclair", icon: "⚡", title: "L'Attaque Éclair", pts: 180, desc: "Marquer dès la première occasion du match." },
     { id: "3-buts", icon: "🔥", title: "Les 3 Buts sans réplique", pts: 250, desc: "Marquer trois buts sans riposte adverse." },
     { id: "symphonie", icon: "🎼", title: "La Symphonie des Attaquants", pts: 300, desc: "Faire marquer tous les attaquants sur un même match (à partir de 6 attaquants minimum)." },
+  ];
+  let challengeProposals = [
+    { id: "prop-1", icon: "🧤", title: "Le Gant de Fer", desc: "Le gardien arrête 3 tirs consécutifs sans que le puck ne quitte la zone.", pts: 120, proposedBy: "Julie Rennes", votes: { "Julie Rennes": "for", "Marco Fontaine": "for", "Karim Ould": "against", "Thomas Bréal": "for" } },
   ];
   const articles = [
     { theme: "Résumé de match", title: "Les Noirs écrasent, les Blancs pleurent (un peu)", paragraphs: ["Retour sur une soirée où Marco a visiblement décidé qu'il jouait sa dernière chance aux JO.", "Les Blancs, eux, préfèrent ne pas en parler — et ont déjà réservé la revanche pour dimanche prochain."], by: "Généré par Karim Ould" },
@@ -853,6 +963,54 @@
       </div>`;
   }
 
+  let trainingCollapsed = {};
+  function toggleTrainingCollapse(i) {
+    const isExpanded = trainingCollapsed[i] === undefined ? (i === 0) : !trainingCollapsed[i];
+    trainingCollapsed[i] = isExpanded;
+    renderTrainings();
+  }
+  function checkTrainingsExpiry() {
+    const now = new Date();
+    let changed = false;
+    for (let i = trainings.length - 1; i >= 0; i--) {
+      const t = trainings[i];
+      if (t.dateObj && t.dateObj < now) {
+        const statuses = (attendanceData[i] && attendanceData[i].statuses) || {};
+        const presentNames = Object.keys(statuses).filter(n => statuses[n] === 'present');
+        trainings.splice(i, 1);
+        attendanceData.splice(i, 1);
+        results.unshift({
+          date: t.date.replace(/ — .*$/, ''),
+          loc: t.loc,
+          scoreNoir: 0, scoreBlanc: 0,
+          highlights: [], defis: [],
+          present: presentNames
+        });
+        changed = true;
+      }
+    }
+    if (changed) trainingCollapsed = {};
+  }
+  function formatCountdown(dateObj) {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfTarget = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+    const diffDays = Math.round((startOfTarget - startOfToday) / 86400000);
+    if (diffDays < 0) return 'Terminé';
+    if (diffDays === 0) return "Aujourd'hui";
+    if (diffDays === 1) return 'J − 1 (demain)';
+    return `J − ${diffDays}`;
+  }
+  function renderHero() {
+    const t = trainings[0];
+    const dateEl = document.getElementById('hero-date');
+    const subEl = document.getElementById('hero-sub');
+    const cdEl = document.getElementById('hero-countdown');
+    if (!t || !t.dateObj || !dateEl) return;
+    dateEl.textContent = t.dateObj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+    subEl.textContent = `${t.dateObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · ${t.loc}`;
+    cdEl.textContent = formatCountdown(t.dateObj);
+  }
   function renderTrainings() {
     document.getElementById('trainings-list').innerHTML = trainings.map((t, i) => {
       const statuses = attendanceData[i].statuses;
@@ -864,9 +1022,10 @@
       const nbA = allPresent.filter(p => effectivePos(i, p) === 'Attaquant').length;
       const nbD = allPresent.filter(p => effectivePos(i, p) === 'Défenseur').length;
       const myStatus = statuses[myName] || 'attente';
+      const isExpanded = trainingCollapsed[i] === undefined ? (i === 0) : !trainingCollapsed[i];
       return `
       <div class="training-card">
-        <div class="row1"><div><div class="date">${t.date}</div><div class="loc">${t.loc}</div></div></div>
+        <div class="row1"><div><div class="date">${t.date} <span class="collapse-toggle" onclick="toggleTrainingCollapse(${i})" title="${isExpanded ? 'Réduire' : 'Déplier'}">${isExpanded ? '▲' : '▼'}</span></div><div class="loc">${t.loc}</div></div></div>
 
         <div class="presence-status">
           <div class="ps-label">Votre statut pour ce match :</div>
@@ -881,6 +1040,7 @@
           ${myStatus === 'forfait' && (attendanceData[i].reasons || {})[myName] ? `<div class="ps-reason">« ${attendanceData[i].reasons[myName]} »</div>` : ''}
         </div>
 
+        ${isExpanded ? `
         <div class="team-blocks">
           ${renderTeamBlock(i, 'blanc', teamName('blanc') + 's', presentBlanc)}
           ${renderTeamBlock(i, 'noir', teamName('noir') + 's', presentNoir)}
@@ -890,9 +1050,13 @@
         <div class="presence-summary">
           <span><strong>${totalPresent} joueurs</strong> présents (${nbA}A / ${nbD}D) · <span style="color:#B23A2E;">${forfaits.length} forfait${forfaits.length > 1 ? 's' : ''}</span></span>
           <button class="btn ghost small admin-only" onclick="alert('Suggestion de compo équilibrée à partir des présences.')">⇄ Équilibrer ${teamName('noir')}s/${teamName('blanc')}s</button>
-        </div>
+        </div>` : `
+        <div class="presence-summary">
+          <span><strong>${totalPresent} joueur${totalPresent > 1 ? 's' : ''}</strong> présent${totalPresent > 1 ? 's' : ''}</span>
+        </div>`}
       </div>`;
     }).join('');
+    renderHero();
   }
   function setMyStatus(i, status) { attendanceData[i].statuses[myName] = status; renderTrainings(); }
   function toggleBlock(i, block) { const key = i + '-' + block; expanded[key] = !expanded[key]; renderTrainings(); }
@@ -1097,12 +1261,13 @@
     const team = fieldVal('edit-team', p.team);
     const style = fieldVal('edit-style', p.style);
     const teamLabel = teamName(team);
-    let paragraph;
-    if (prompt) {
-      paragraph = `${firstName} ${lastName} (${pos}, équipe ${teamLabel}) : ${prompt}`;
-    } else {
-      paragraph = `${firstName} ${lastName} évolue au poste de ${pos.toLowerCase()} chez les ${teamLabel}${style ? `, avec un style qu'on pourrait résumer par « ${style} »` : ''}. Une légende du dimanche soir en devenir.`;
-    }
+    const s = computePlayerStats(p);
+    let paragraph = pick([
+      `${firstName} ${lastName} évolue au poste de ${pos.toLowerCase()} chez les ${teamLabel}${style ? `, avec un style qu'on pourrait résumer par « ${style} »` : ''}. Une légende du dimanche soir en devenir.`,
+      `Chez les ${teamLabel}, on ne présente plus ${firstName} ${lastName} : ${s.matches} match${s.matches > 1 ? 's' : ''} au compteur cette saison, ${s.ratio}% de victoires, et une réputation qui dépasse (un peu) la réalité.`,
+      `${firstName} ${lastName} fait partie de ces ${pos.toLowerCase()}s dont on parle plus au bar qu'à l'entraînement${style ? ` — un style « ${style} » qui ne laisse personne indifférent, surtout pas les arbitres` : ''}.`,
+    ]);
+    if (prompt) paragraph += ` (Bio rédigée en tenant compte des instructions transmises, sans les reproduire mot pour mot.)`;
     const textarea = document.getElementById('edit-bio');
     textarea.value = textarea.value.trim() ? textarea.value.trim() + '\n\n' + paragraph : paragraph;
     document.getElementById('edit-bio-prompt').value = '';
@@ -1200,7 +1365,7 @@
     document.getElementById('results-list').innerHTML = results.map((r,i) => `
       <div class="result-card">
         <div class="date">${r.date}</div>
-        <div class="score-row"><div class="side noir">${teamName('noir')} ${r.scoreNoir}</div><div class="vs">vs</div><div class="side blanc">${teamName('blanc')} ${r.scoreBlanc}</div></div>
+        <div class="score-row"><div class="side noir">${r.scoreNoir}</div><div class="vs">vs</div><div class="side blanc">${r.scoreBlanc}</div></div>
         ${r.highlights.map(h => `<div class="highlight">• ${h}</div>`).join('')}
         <div>${r.defis.map(d => `<span class="defis-tag">✓ ${d.title} <em>(${teamName(d.team)})</em></span>`).join('')}</div>
         <div class="admin-block">
@@ -1226,33 +1391,110 @@
           <button class="btn ghost small admin-only" onclick="deleteChallenge('${c.id}')" title="Supprimer" style="color:#B23A2E;border-color:#B23A2E;">🗑</button>
         </div>
       </div>`).join('');
+    renderProposals();
   }
 
-  let newChallengeIcon = '🏒';
-  let editingChallengeId = null;
+  function computeVotes(p) {
+    const values = Object.values(p.votes);
+    const forCount = values.filter(v => v === 'for').length;
+    const againstCount = values.filter(v => v === 'against').length;
+    const total = forCount + againstCount;
+    const pct = total ? Math.round((forCount / total) * 100) : 0;
+    return { forCount, againstCount, total, pct };
+  }
+  function voteProposal(id, choice) {
+    const p = challengeProposals.find(pp => pp.id === id);
+    if (!p) return;
+    if (p.votes[myName] === choice) delete p.votes[myName];
+    else p.votes[myName] = choice;
+    renderProposals();
+  }
+  function validateProposal(id) {
+    const idx = challengeProposals.findIndex(pp => pp.id === id);
+    if (idx === -1) return;
+    const p = challengeProposals[idx];
+    challengesCatalog.push({ id: 'defi-' + Date.now(), icon: p.icon, title: p.title, desc: p.desc, pts: p.pts || 100 });
+    challengeProposals.splice(idx, 1);
+    alert(`Défi validé ! Notification envoyée : "${p.title}" rejoint la liste officielle des défis.`);
+    renderChallenges();
+  }
+  function rejectProposal(id) {
+    customConfirm('Rejeter cette proposition de défi ?', () => {
+      challengeProposals = challengeProposals.filter(pp => pp.id !== id);
+      renderProposals();
+    });
+  }
+  function renderProposals() {
+    const el = document.getElementById('proposals-list');
+    if (!el) return;
+    if (!challengeProposals.length) {
+      el.innerHTML = `<div style="font-size:0.85rem;color:var(--ink-soft);">Aucune proposition pour l'instant — à vous de jouer !</div>`;
+      return;
+    }
+    el.innerHTML = challengeProposals.map(p => {
+      const { forCount, againstCount, total, pct } = computeVotes(p);
+      const myVote = p.votes[myName];
+      return `
+      <div class="proposal-card">
+        <div class="proposal-top">
+          <div>
+            <div class="proposal-title">${p.icon} ${p.title}</div>
+            <div class="proposal-desc">${p.desc}</div>
+            <div class="proposal-meta">Proposé par ${p.proposedBy} · ${p.pts} pts suggérés</div>
+          </div>
+        </div>
+        <div class="proposal-vote-row">
+          <div class="vote-btn for ${myVote === 'for' ? 'active' : ''}" onclick="voteProposal('${p.id}','for')">👍 Pour</div>
+          <div class="vote-btn against ${myVote === 'against' ? 'active' : ''}" onclick="voteProposal('${p.id}','against')">👎 Contre</div>
+        </div>
+        <div class="vote-bar-track"><div class="vote-bar-for" style="width:${total ? (forCount/total*100) : 0}%"></div><div class="vote-bar-against" style="width:${total ? (againstCount/total*100) : 0}%"></div></div>
+        <div class="vote-summary">
+          <span>${forCount} pour · ${againstCount} contre</span>
+          <span><strong>${pct}%</strong> pour (${total} votant${total > 1 ? 's' : ''})</span>
+        </div>
+        <div class="proposal-admin-actions admin-only">
+          <button class="btn small" onclick="validateProposal('${p.id}')">✓ Valider ce défi</button>
+          <button class="btn ghost small" onclick="rejectProposal('${p.id}')" style="color:#B23A2E;border-color:#B23A2E;">🗑 Rejeter</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  function openProposeModal() {
+    editingChallengeId = null;
+    proposeMode = true;
+    newChallengeIcon = '💡';
+    renderNewChallengeModal();
+    document.getElementById('new-challenge-modal').classList.add('open');
+  }
   function openNewChallengeModal(id) {
     editingChallengeId = id || null;
+    proposeMode = false;
     const editing = editingChallengeId ? challengesCatalog.find(c => c.id === editingChallengeId) : null;
     newChallengeIcon = editing ? editing.icon : '🏒';
     renderNewChallengeModal();
     document.getElementById('new-challenge-modal').classList.add('open');
   }
+  let newChallengeIcon = '🏒';
+  let editingChallengeId = null;
+  let proposeMode = false;
   function closeNewChallengeModal() {
     editingChallengeId = null;
+    proposeMode = false;
     document.getElementById('new-challenge-modal').classList.remove('open');
   }
   function deleteChallenge(id) {
-    if (!confirm('Supprimer ce défi ?')) return;
-    const idx = challengesCatalog.findIndex(c => c.id === id);
-    if (idx > -1) challengesCatalog.splice(idx, 1);
-    renderChallenges();
+    customConfirm('Supprimer ce défi ?', () => {
+      const idx = challengesCatalog.findIndex(c => c.id === id);
+      if (idx > -1) challengesCatalog.splice(idx, 1);
+      renderChallenges();
+    });
   }
   function selectChallengeIcon(icon) {
     newChallengeIcon = icon;
     renderNewChallengeModal();
   }
   function renderNewChallengeModal() {
-    const icons = ['🏒','🥅','🧊','⚡','🔥','🎯','🛡️','🎉','💪','🏆'];
+    const icons = ['🏒','🥅','🧊','⚡','🔥','🎯','🛡️','🎉','💪','🏆','💡'];
     const editing = editingChallengeId ? challengesCatalog.find(c => c.id === editingChallengeId) : null;
     const titleEl = document.getElementById('new-challenge-title');
     const descEl = document.getElementById('new-challenge-desc');
@@ -1260,12 +1502,14 @@
     const titleVal = titleEl ? titleEl.value : (editing ? editing.title : '');
     const descVal = descEl ? descEl.value : (editing ? editing.desc : '');
     const ptsVal = ptsEl ? ptsEl.value : (editing ? editing.pts : 100);
+    const headTitle = proposeMode ? 'Proposer<br>un Défi' : (editing ? 'Modifier<br>le Défi' : "Nouveau<br>Défi d'Équipe");
     document.getElementById('new-challenge-modal-content').innerHTML = `
       <div class="modal-head">
-        <div class="modal-icon" style="background:#DCEAF7;">🎯</div>
-        <h2>${editing ? 'Modifier<br>le Défi' : "Nouveau<br>Défi d'Équipe"}</h2>
+        <div class="modal-icon" style="background:#DCEAF7;">${proposeMode ? '💡' : '🎯'}</div>
+        <h2>${headTitle}</h2>
         <button class="modal-close" onclick="closeNewChallengeModal()">✕</button>
       </div>
+      ${proposeMode ? `<div class="modal-sub">Ta proposition sera soumise au vote du vestiaire avant validation par un admin.</div>` : ''}
       <div class="modal-body">
         <div class="custom-label">Icône</div>
         <div class="icon-picker">
@@ -1281,7 +1525,7 @@
       <div class="modal-actions">
         <div class="modal-actions-row">
           <button class="btn-ghost-modal" onclick="closeNewChallengeModal()">Annuler</button>
-          <button class="btn-sheet-confirm" onclick="confirmNewChallenge()">${editing ? '✓ Enregistrer les modifications' : '✓ Créer le défi'}</button>
+          <button class="btn-sheet-confirm" onclick="confirmNewChallenge()">${proposeMode ? '✓ Soumettre au vote' : (editing ? '✓ Enregistrer les modifications' : '✓ Créer le défi')}</button>
         </div>
       </div>`;
   }
@@ -1290,6 +1534,14 @@
     const desc = document.getElementById('new-challenge-desc').value.trim();
     const pts = parseInt(document.getElementById('new-challenge-pts').value, 10) || 0;
     if (!title) { alert('Merci de donner un titre au défi.'); return; }
+    if (proposeMode) {
+      challengeProposals.push({ id: 'prop-' + Date.now(), icon: newChallengeIcon, title, desc, pts, proposedBy: myName, votes: {} });
+      alert('Défi proposé ! Une notification invite le vestiaire à venir voter.');
+      proposeMode = false;
+      closeNewChallengeModal();
+      renderChallenges();
+      return;
+    }
     if (editingChallengeId) {
       const c = challengesCatalog.find(cc => cc.id === editingChallengeId);
       c.icon = newChallengeIcon; c.title = title; c.desc = desc; c.pts = pts;
@@ -1324,9 +1576,10 @@
     window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
   }
   function deleteArticle(idx) {
-    if (!confirm('Supprimer cet article de la Gazette ?')) return;
-    articles.splice(idx, 1);
-    renderArticles();
+    customConfirm('Supprimer cet article de la Gazette ?', () => {
+      articles.splice(idx, 1);
+      renderArticles();
+    });
   }
   function checkArticlesOverflow() {
     articles.forEach((a, idx) => {
@@ -1405,37 +1658,140 @@
     return `La Gazette sort un scoop (ou presque)`;
   }
 
+  let confirmCallback = null;
+  function customConfirm(message, onYes) {
+    confirmCallback = onYes;
+    document.getElementById('confirm-modal-content').innerHTML = `
+      <div class="modal-body" style="padding-top:22px;">
+        <p style="font-size:0.92rem; margin:0 0 18px 0;">${message}</p>
+        <div class="modal-actions-row">
+          <button class="btn-ghost-modal" onclick="closeCustomConfirm()">Annuler</button>
+          <button class="btn-sheet-confirm" style="background:#B23A2E;" onclick="runCustomConfirm()">Confirmer</button>
+        </div>
+      </div>`;
+    document.getElementById('confirm-modal').classList.add('open');
+  }
+  function closeCustomConfirm() {
+    document.getElementById('confirm-modal').classList.remove('open');
+    confirmCallback = null;
+  }
+  function runCustomConfirm() {
+    const cb = confirmCallback;
+    closeCustomConfirm();
+    if (cb) cb();
+  }
+
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  let gazettePersona = "Journaliste sportif à la plume aiguisée, la vanne facile et le sens de la formule — parodie assumée de la presse sportive, jamais méchant, toujours un peu moqueur.";
+  function renderPersonaDisplay() {
+    const el = document.getElementById('persona-display');
+    if (el) el.textContent = `Ton actuel : ${gazettePersona}`;
+  }
+  function openPersonaModal() {
+    document.getElementById('persona-modal-content').innerHTML = `
+      <div class="modal-head">
+        <div class="modal-icon" style="background:#FCEFD1;">🖋️</div>
+        <h2>Ton de la<br>rédaction</h2>
+        <button class="modal-close" onclick="closePersonaModal()">✕</button>
+      </div>
+      <div class="modal-sub">Cette description sera envoyée comme instruction permanente ("system prompt") à l'IA, pour tous les contenus générés dans l'app — articles de la Gazette et bios des fiches joueurs.</div>
+      <div class="modal-body">
+        <textarea id="persona-input" style="min-height:100px;">${gazettePersona}</textarea>
+      </div>
+      <div class="modal-actions">
+        <div class="modal-actions-row">
+          <button class="btn-ghost-modal" onclick="closePersonaModal()">Annuler</button>
+          <button class="btn-sheet-confirm" onclick="savePersona()">✓ Enregistrer</button>
+        </div>
+      </div>`;
+    document.getElementById('persona-modal').classList.add('open');
+  }
+  function closePersonaModal() { document.getElementById('persona-modal').classList.remove('open'); }
+  function savePersona() {
+    gazettePersona = document.getElementById('persona-input').value.trim() || gazettePersona;
+    renderPersonaDisplay();
+    closePersonaModal();
+  }
+
   function buildArticleBody(theme, prompt, ctx) {
     const paragraphs = [];
     if (theme === 'Résumé de match') {
       const r = ctx.match;
       const winner = r.scoreNoir > r.scoreBlanc ? 'noir' : r.scoreBlanc > r.scoreNoir ? 'blanc' : null;
-      paragraphs.push(`${r.date}, ${r.loc} — Il y avait de la glace sur la patinoire et de la tension dans les gradins (deux bancs et un distributeur de boissons capricieux). Score final : ${teamName('noir')} ${r.scoreNoir} - ${teamName('blanc')} ${r.scoreBlanc}.`);
-      if (winner === 'noir') paragraphs.push(`Les ${teamName('noir')}s repartent la tête haute et la troisième mi-temps assurée, pendant que les ${teamName('blanc')}s ressassent déjà les occasions manquées autour d'une bière tiède.`);
-      else if (winner === 'blanc') paragraphs.push(`Les ${teamName('blanc')}s repartent la tête haute et la troisième mi-temps assurée, pendant que les ${teamName('noir')}s ressassent déjà les occasions manquées autour d'une bière tiède.`);
-      else paragraphs.push(`Un match nul qui ne satisfait personne, sauf peut-être l'arbitre, ravi de rentrer chez lui sans réclamation.`);
-      if (r.highlights.length) paragraphs.push(`Côté temps forts : ${r.highlights.join(' ')}`);
+
+      paragraphs.push(pick([
+        `${r.date}, ${r.loc} — Il y avait de la glace sur la patinoire et de la tension dans les gradins (deux bancs et un distributeur de boissons capricieux). Score final : ${teamName('noir')} ${r.scoreNoir} - ${teamName('blanc')} ${r.scoreBlanc}.`,
+        `Ambiance électrique ce ${r.date} à ${r.loc} : les compositions étaient prêtes, les patins affûtés, et le distributeur de boissons une fois de plus en grève. Score final : ${teamName('noir')} ${r.scoreNoir} - ${teamName('blanc')} ${r.scoreBlanc}.`,
+        `On se souviendra longtemps — ou pas, la mémoire collective du club étant ce qu'elle est — de ce rendez-vous du ${r.date} à ${r.loc}. Score final : ${teamName('noir')} ${r.scoreNoir} - ${teamName('blanc')} ${r.scoreBlanc}.`,
+      ]));
+
+      if (winner === 'noir') paragraphs.push(pick([
+        `Les ${teamName('noir')}s repartent la tête haute et la troisième mi-temps assurée, pendant que les ${teamName('blanc')}s ressassent déjà les occasions manquées autour d'une bière tiède.`,
+        `Victoire nette pour les ${teamName('noir')}s, qui ont visiblement pris le mot "loisir" avec des pincettes ce soir-là. Les ${teamName('blanc')}s, eux, retournent au vestiaire chercher des excuses — la patinoire glissante fera très bien l'affaire.`,
+      ]));
+      else if (winner === 'blanc') paragraphs.push(pick([
+        `Les ${teamName('blanc')}s repartent la tête haute et la troisième mi-temps assurée, pendant que les ${teamName('noir')}s ressassent déjà les occasions manquées autour d'une bière tiède.`,
+        `Victoire nette pour les ${teamName('blanc')}s, qui ont visiblement pris le mot "loisir" avec des pincettes ce soir-là. Les ${teamName('noir')}s, eux, retournent au vestiaire chercher des excuses — la patinoire glissante fera très bien l'affaire.`,
+      ]));
+      else paragraphs.push(pick([
+        `Un match nul qui ne satisfait personne, sauf peut-être l'arbitre, ravi de rentrer chez lui sans réclamation.`,
+        `Égalité méritée, ou signe que personne n'avait vraiment envie de gagner ce soir-là. Les deux vestiaires sont repartis en célébrant... un peu, quand même.`,
+      ]));
+
+      if (r.present && r.present.length) {
+        const mvp = pick(r.present.map(name => players.find(p => p.name === name)).filter(Boolean));
+        if (mvp) paragraphs.push(pick([
+          `${mvp.firstName} ${mvp.lastName} repart avec le titre officieux d'homme (ou femme) du match, décerné par un jury composé exclusivement de lui-même.`,
+          `Mention spéciale à ${mvp.firstName} ${mvp.lastName}, dont le style « ${mvp.style || 'indéfinissable'} » a fait au moins une victime : lui-même, à bout de souffle dès la deuxième période.`,
+        ]));
+      }
+
+      if (r.highlights.length) paragraphs.push(pick([
+        `Côté temps forts : ${r.highlights.join(' ')}`,
+        `Ce qu'il faut retenir de la soirée : ${r.highlights.join(' ')}`,
+      ]));
       if (r.defis.length) paragraphs.push(`Sur le tableau des défis, ${r.defis.map(d => `« ${d.title} » a été validé par les ${teamName(d.team)}s`).join(', ')} — de quoi faire grimper le classement de la saison.`);
-      if (prompt) paragraphs.push(prompt);
-      paragraphs.push(`Rendez-vous dimanche prochain pour une nouvelle dose de glace, de sueur et de mauvaise foi.`);
+
+      paragraphs.push(pick([
+        `Rendez-vous dimanche prochain pour une nouvelle dose de glace, de sueur et de mauvaise foi.`,
+        `La Gazette vous donne rendez-vous au prochain match, en espérant un distributeur de boissons enfin réparé.`,
+        `Prochain épisode dimanche : mêmes acteurs, même patinoire, mauvaise foi garantie.`,
+      ]));
     } else if (theme === 'Rumeur de transfert') {
       const names = ctx.players.map(p => `${p.firstName} ${p.lastName}`).join(' et ');
       const p0 = ctx.players[0];
-      paragraphs.push(`Info ou intox ? Le vestiaire s'agite autour de ${names}. Plusieurs sources proches du banc (comprendre : quelqu'un a entendu quelque chose près du sac de hockey) évoquent un possible passage chez les ${teamName(p0.team === 'noir' ? 'blanc' : 'noir')}s.`);
       const s0 = computePlayerStats(p0);
-      paragraphs.push(`Avec un style « ${p0.style} » et ${s0.matches} match${s0.matches > 1 ? 's' : ''} déjà au compteur cette saison, un tel transfert ferait clairement du bruit — au minimum dans le groupe WhatsApp de l'équipe.`);
-      if (prompt) paragraphs.push(prompt);
-      paragraphs.push(`Aucune conférence de presse n'est prévue. Affaire à suivre, de préférence avec un œil sur le prochain Doodle.`);
+      paragraphs.push(pick([
+        `Info ou intox ? Le vestiaire s'agite autour de ${names}. Plusieurs sources proches du banc (comprendre : quelqu'un a entendu quelque chose près du sac de hockey) évoquent un possible passage chez les ${teamName(p0.team === 'noir' ? 'blanc' : 'noir')}s.`,
+        `Ça chuchote fort du côté du vestiaire : ${names} serai(en)t sur le départ, direction les ${teamName(p0.team === 'noir' ? 'blanc' : 'noir')}s. La source ? Anonyme, évidemment, et probablement un peu éméchée.`,
+      ]));
+      paragraphs.push(pick([
+        `Avec un style « ${p0.style || 'mystère total'} » et ${s0.matches} match${s0.matches > 1 ? 's' : ''} déjà au compteur cette saison (${s0.ratio}% de victoires), un tel transfert ferait clairement du bruit — au minimum dans le groupe WhatsApp de l'équipe.`,
+        `Le principal intéressé n'a ni confirmé ni démenti, se contentant d'un sourire énigmatique et d'un deuxième service au bar. Un silence qui, dans le milieu très feutré du hockey loisir, vaut toutes les confirmations.`,
+      ]));
+      paragraphs.push(pick([
+        `Aucune conférence de presse n'est prévue. Affaire à suivre, de préférence avec un œil sur le prochain Doodle.`,
+        `La Gazette suivra ce dossier brûlant avec l'attention qu'il mérite, c'est-à-dire beaucoup trop.`,
+      ]));
     } else if (theme === 'Interview joueur') {
       const p0 = ctx.players[0];
       const s0 = computePlayerStats(p0);
       paragraphs.push(`Nous avons intercepté ${p0.firstName} ${p0.lastName} (${p0.pos}, ${s0.matches} match${s0.matches > 1 ? 's' : ''}, ${s0.ratio}% de victoires) entre deux lacets, pour une interview qu'il n'a pas vraiment demandée.`);
-      paragraphs.push(`« Mon style de jeu ? Disons que je suis plutôt du genre "${p0.style}" », confie-t-il avec un sérieux discutable.`);
-      if (prompt) paragraphs.push(prompt);
-      paragraphs.push(`Sur ses objectifs pour la fin de saison : « Gagner des matches, valider des défis, et surtout ne pas payer la tournée. »`);
+      paragraphs.push(`« Mon style de jeu ? Disons que je suis plutôt du genre "${p0.style || 'imprévisible, même pour moi'}" », confie-t-il avec un sérieux discutable.`);
+      paragraphs.push(pick([
+        `Sur ses objectifs pour la fin de saison : « Gagner des matches, valider des défis, et surtout ne pas payer la tournée. »`,
+        `Interrogé sur ses ambitions, il répond sans hésiter : « Finir la saison sans forfait — et si possible, sans que Marco ne me pique la vedette. »`,
+      ]));
+      paragraphs.push(pick([
+        `L'interview se termine comme elle a commencé : dans la confusion générale, entre deux joueurs qui cherchent leur protège-dents.`,
+        `Sur ces belles paroles, ${p0.firstName} retourne s'échauffer — ou plutôt discuter de la troisième mi-temps à venir, ce qui revient au même chez nous.`,
+      ]));
     } else {
-      paragraphs.push(prompt || `La rédaction de la Gazette n'avait pas d'inspiration aujourd'hui, mais a quand même sorti un article, par principe.`);
+      paragraphs.push(`La rédaction de la Gazette n'avait pas vraiment d'inspiration aujourd'hui, mais a quand même sorti un article, par principe.`);
+      paragraphs.push(`Ce qui suit est donc à prendre avec la même légèreté qu'un vestiaire un soir de défaite : beaucoup de bruit, peu de vérités vérifiées.`);
     }
+    if (prompt) paragraphs.push(`Note de la rédaction : article rédigé en tenant compte des instructions transmises par son auteur (non reproduites ici pour rester dans le ton).`);
     return paragraphs;
   }
 
@@ -1501,7 +1857,7 @@
       const label = `${e.date} — ${e.time}`;
       const alreadyImported = trainings.some(t => t.date === label && t.loc === e.loc);
       if (!alreadyImported) {
-        trainings.push({ date: label, loc: e.loc });
+        trainings.push({ date: label, loc: e.loc, dateObj: e.dateObj });
         attendanceData.push({ statuses: {}, teamOverride: {}, posOverride: {} });
       }
     });
@@ -1551,13 +1907,20 @@
       const lum = relLuminance(color);
       const ink = lum > 0.6 ? '#141414' : '#ffffff';
       const border = lum > 0.85 ? '#141414' : color;
+      const fill = lum > 0.9 ? '#D5D9DD' : color;
       root.setProperty(`--team-color-${key}`, color);
       root.setProperty(`--team-ink-${key}`, ink);
       root.setProperty(`--team-border-${key}`, border);
+      root.setProperty(`--team-fill-${key}`, fill);
     });
   }
   let formColorNoir = '#141414';
   let formColorBlanc = '#FFFFFF';
+  let formInviteCode = '';
+  function regenerateFormInviteCode() {
+    formInviteCode = generateInviteCode();
+    renderVersionsModal();
+  }
   function selectVersionColor(field, color) {
     if (field === 'noir') formColorNoir = color; else formColorBlanc = color;
     renderVersionsModal();
@@ -1600,6 +1963,7 @@
     editingVersionId = null;
     formColorNoir = '#141414';
     formColorBlanc = '#FFFFFF';
+    formInviteCode = generateInviteCode();
     versionsView = 'form';
     renderVersionsModal();
   }
@@ -1608,6 +1972,7 @@
     const v = versions.find(vv => vv.id === id);
     formColorNoir = v.teamColorNoir || '#141414';
     formColorBlanc = v.teamColorBlanc || '#FFFFFF';
+    formInviteCode = v.inviteCode;
     versionsView = 'form';
     renderVersionsModal();
   }
@@ -1619,10 +1984,11 @@
   }
   function deleteVersion(id) {
     if (versions.length <= 1) { alert('Impossible de supprimer la seule version existante.'); return; }
-    if (!confirm('Supprimer cette version et sa configuration ?')) return;
-    versions = versions.filter(v => v.id !== id);
-    if (!versions.some(v => v.active)) versions[0].active = true;
-    renderVersionsModal();
+    customConfirm('Supprimer cette version et sa configuration ?', () => {
+      versions = versions.filter(v => v.id !== id);
+      if (!versions.some(v => v.active)) versions[0].active = true;
+      renderVersionsModal();
+    });
   }
 
   function renderVersionsModal() {
@@ -1690,10 +2056,14 @@
               <div class="color-swatch-row">${renderColorSwatches('blanc', formColorBlanc)}</div>
             </div>
           </div>
+          <div class="custom-label" style="margin-top:14px;">Code d'invitation</div>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="version-invite-code" value="${fieldVal('version-invite-code', formInviteCode)}" style="flex:1; text-transform:uppercase;" placeholder="Ex : BLM-A7K2P9">
+            <button class="btn ghost small" onclick="regenerateFormInviteCode()">🔄 Régénérer</button>
+          </div>
           <div class="custom-label" style="margin-top:14px;">Paramètres Doodle</div>
           <input type="text" id="version-doodle-url" value="${doodleUrl}" placeholder="URL du Doodle">
           <input type="text" id="version-doodle-filter" value="${doodleFilter}" placeholder="Nom exact de l'événement (ex : ENTRAINEMENT LOISIRS B)" style="margin-top:8px;">
-          ${!editing ? `<div class="onboarding-sub" style="text-align:left; margin:14px 0 0 0;">Un code d'invitation unique sera généré automatiquement à la création, à partager avec les joueurs de cette catégorie.</div>` : ''}
         </div>
         <div class="modal-actions">
           <div class="modal-actions-row">
@@ -1710,23 +2080,133 @@
     const teamBlanc = document.getElementById('version-team-blanc').value.trim() || 'Blanc';
     const doodleUrl = document.getElementById('version-doodle-url').value.trim();
     const doodleFilter = document.getElementById('version-doodle-filter').value.trim();
+    const inviteCode = document.getElementById('version-invite-code').value.trim().toUpperCase();
     if (!name) { alert('Merci de donner un nom à cette version.'); return; }
+    if (!inviteCode) { alert('Merci de renseigner un code d\'invitation.'); return; }
+    const codeTaken = versions.some(v => v.inviteCode === inviteCode && v.id !== editingVersionId);
+    if (codeTaken) { alert('Ce code d\'invitation est déjà utilisé par une autre version. Choisissez-en un autre.'); return; }
     if (editingVersionId) {
       const v = versions.find(vv => vv.id === editingVersionId);
       v.name = name; v.teamNoir = teamNoir; v.teamBlanc = teamBlanc; v.doodleUrl = doodleUrl; v.doodleFilter = doodleFilter;
-      v.teamColorNoir = formColorNoir; v.teamColorBlanc = formColorBlanc;
+      v.teamColorNoir = formColorNoir; v.teamColorBlanc = formColorBlanc; v.inviteCode = inviteCode;
       if (v.active) { refreshAllTeamLabels(); applyTeamColors(); }
     } else {
       versions.push({
         id: 'v-' + Date.now(), name, teamNoir, teamBlanc, doodleUrl, doodleFilter,
         teamColorNoir: formColorNoir, teamColorBlanc: formColorBlanc,
-        inviteCode: generateInviteCode(), active: false
+        inviteCode, active: false
       });
     }
     versionsView = 'list';
     editingVersionId = null;
     renderVersionsModal();
   }
+
+  let tutoTab = 'android';
+  const installSteps = {
+    android: [
+      { icon: '🌐', title: 'Ouvrez le lien dans Chrome', desc: 'Si le lien a été envoyé sur WhatsApp, appuyez sur "Ouvrir dans le navigateur" si l\'option apparaît, pour être sûr d\'utiliser Chrome.' },
+      { icon: '⬇️', title: 'Appuyez sur "Installer l\'application"', desc: 'Une bannière apparaît en bas de l\'écran après quelques secondes. Si elle n\'apparaît pas, ouvrez le menu ⋮ en haut à droite et choisissez "Installer l\'application".' },
+      { icon: '✅', title: 'Confirmez l\'installation', desc: 'Une fenêtre s\'affiche : appuyez sur "Installer".' },
+      { icon: '🏒', title: 'C\'est prêt !', desc: 'L\'icône de Beer League Manager apparaît sur votre écran d\'accueil, comme une vraie app.' },
+    ],
+    iphone: [
+      { icon: '🌐', title: 'Ouvrez le lien avec Safari', desc: 'Important : utilisez Safari, pas Chrome ni le navigateur intégré à WhatsApp — sinon l\'option n\'apparaîtra pas.' },
+      { icon: '📤', title: 'Appuyez sur l\'icône de partage', desc: 'Le carré avec une flèche vers le haut, en bas de l\'écran (ou en haut sur iPad).' },
+      { icon: '🏠', title: 'Choisissez "Sur l\'écran d\'accueil"', desc: 'Faites défiler la liste des options jusqu\'à la trouver.' },
+      { icon: '✅', title: 'Appuyez sur "Ajouter"', desc: 'En haut à droite de l\'écran. L\'icône apparaît alors sur votre écran d\'accueil.' },
+    ],
+  };
+  function openInstallHelpModal() {
+    tutoTab = 'android';
+    renderInstallHelpModal();
+    document.getElementById('install-help-modal').classList.add('open');
+  }
+  function closeInstallHelpModal() { document.getElementById('install-help-modal').classList.remove('open'); }
+  function setTutoTab(tab) { tutoTab = tab; renderInstallHelpModal(); }
+  function renderInstallHelpModal() {
+    document.getElementById('install-help-modal-content').innerHTML = `
+      <div class="modal-head">
+        <div class="modal-icon" style="background:#DCEAF7;">📲</div>
+        <h2>Installer<br>l'application</h2>
+        <button class="modal-close" onclick="closeInstallHelpModal()">✕</button>
+      </div>
+      <div class="modal-sub">Ajoutez Beer League Manager à votre écran d'accueil pour l'ouvrir comme une vraie app.</div>
+      <div class="modal-body">
+        <div class="tuto-tabs">
+          <div class="tuto-tab ${tutoTab === 'android' ? 'active' : ''}" onclick="setTutoTab('android')">🤖 Android</div>
+          <div class="tuto-tab ${tutoTab === 'iphone' ? 'active' : ''}" onclick="setTutoTab('iphone')">🍎 iPhone</div>
+        </div>
+        <div style="margin-top:10px;">
+          ${installSteps[tutoTab].map((s, i) => `
+            <div class="tuto-step">
+              <div class="tuto-step-num">${i + 1}</div>
+              <div>
+                <div class="tuto-step-title">${s.icon} ${s.title}</div>
+                <div class="tuto-step-desc">${s.desc}</div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  let notificationPrefs = { enabled: false, newTraining: true, changedTraining: true, reminder: true, results: false, gazette: false, proposalVote: true, proposalValidated: true };
+  const notifCategories = [
+    { key: 'newTraining', icon: '🆕', label: 'Nouvel entraînement ajouté', example: 'Nouvel entraînement le dimanche 12 octobre à 20h30, Patinoire du Petit Port. Indique ta présence !' },
+    { key: 'changedTraining', icon: '⚠️', label: 'Entraînement annulé ou modifié', example: 'Changement : l\'entraînement de dimanche est décalé à 19h00, Patinoire municipale.' },
+    { key: 'reminder', icon: '⏰', label: 'Rappel de présence', sub: 'Envoyé lundi matin, vendredi soir et dimanche midi, uniquement à ceux qui n\'ont pas encore répondu.', example: 'Toujours pas de réponse pour l\'entraînement de dimanche ! Indique ta présence en 2 secondes.' },
+    { key: 'proposalVote', icon: '🗳️', label: 'Nouveau défi à voter', example: 'Julie a proposé un nouveau défi : « Le Gant de Fer ». Viens voter !' },
+    { key: 'proposalValidated', icon: '✅', label: 'Défi validé', example: 'Le défi « Le Gant de Fer » a été validé et rejoint la liste officielle !' },
+    { key: 'results', icon: '🏆', label: 'Nouveau résultat publié', example: 'Le résultat du match de dimanche vient d\'être renseigné. Découvre le score !' },
+    { key: 'gazette', icon: '📰', label: 'Nouvel article dans la Gazette', example: 'Un nouvel article vient d\'être publié dans la Gazette du Dimanche.' },
+  ];
+  function openNotificationsModal() {
+    renderNotificationsModal();
+    document.getElementById('notifications-modal').classList.add('open');
+  }
+  function closeNotificationsModal() { document.getElementById('notifications-modal').classList.remove('open'); }
+  function toggleNotifMaster() {
+    notificationPrefs.enabled = !notificationPrefs.enabled;
+    renderNotificationsModal();
+  }
+  function toggleNotifCategory(key) {
+    notificationPrefs[key] = !notificationPrefs[key];
+    renderNotificationsModal();
+  }
+  function renderNotificationsModal() {
+    const activeExample = notifCategories.find(c => notificationPrefs[c.key]) || notifCategories[0];
+    document.getElementById('notifications-modal-content').innerHTML = `
+      <div class="modal-head">
+        <div class="modal-icon" style="background:#DCEAF7;">🔔</div>
+        <h2>Notifications</h2>
+        <button class="modal-close" onclick="closeNotificationsModal()">✕</button>
+      </div>
+      <div class="modal-sub">Reste informé des changements de dernière minute sur le calendrier.</div>
+      <div class="modal-body">
+        <div class="notif-row">
+          <span class="notif-label">Activer les notifications</span>
+          <span class="admin-toggle ${notificationPrefs.enabled ? 'on' : ''}" onclick="toggleNotifMaster()">${notificationPrefs.enabled ? '✓ Activées' : 'Désactivées'}</span>
+        </div>
+        ${notifCategories.map(c => `
+          <div class="notif-row ${notificationPrefs.enabled ? '' : 'disabled'}" style="align-items:flex-start;">
+            <div>
+              <div class="notif-label">${c.icon} ${c.label}</div>
+              ${c.sub ? `<div class="notif-sub">${c.sub}</div>` : ''}
+            </div>
+            <span class="admin-toggle ${notificationPrefs[c.key] ? 'on' : ''}" onclick="toggleNotifCategory('${c.key}')" style="flex-shrink:0;">${notificationPrefs[c.key] ? '✓' : ''}</span>
+          </div>`).join('')}
+        <div class="custom-label" style="margin-top:14px;">Aperçu</div>
+        <div class="notif-preview">
+          <div class="notif-preview-icon">🏒</div>
+          <div>
+            <div class="notif-preview-title">Beer League Manager</div>
+            <div class="notif-preview-text">${notificationPrefs.enabled ? activeExample.example : 'Active les notifications pour voir un aperçu.'}</div>
+          </div>
+        </div>
+        <div class="onboarding-sub" style="text-align:left; margin-top:14px;">Sur iPhone, les notifications ne fonctionnent que si l'app a été installée sur l'écran d'accueil (voir le tuto ❓) — Safari seul ne les autorise pas.</div>
+      </div>`;
+  }
+
 
   let onboardingStep = 1;
   const onboardingAccount = { email: '', password: '' };
@@ -1822,7 +2302,9 @@
     renderTrainings();
   }
 
+  checkTrainingsExpiry();
   renderTrainings(); renderPlayers(); renderResults(); renderChallenges(); renderArticles(); renderGenContext();
+  renderPersonaDisplay();
   applyTeamColors();
   document.getElementById('filter-label-noir').textContent = teamName('noir') + 's';
   document.getElementById('filter-label-blanc').textContent = teamName('blanc') + 's';
