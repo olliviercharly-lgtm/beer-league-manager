@@ -288,6 +288,13 @@
   .vote-bar-against { background: #B23A2E; }
   .vote-summary { display: flex; justify-content: space-between; font-size: 0.76rem; color: var(--ink-soft); margin-top: 6px; }
   .proposal-admin-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .badges-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 8px; }
+  .badge-card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 14px; text-align: center; }
+  .badge-card.locked { opacity: 0.45; }
+  .badge-icon { font-size: 1.8rem; margin-bottom: 6px; }
+  .badge-title { font-weight: 600; font-size: 0.85rem; }
+  .badge-desc { font-size: 0.72rem; color: var(--ink-soft); margin-top: 2px; }
+  .badge-team-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); margin: 14px 0 8px 0; }
   .color-swatch-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
   .color-swatch { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--line); cursor: pointer; box-sizing: border-box; }
   .color-swatch.selected { border-color: var(--club); box-shadow: 0 0 0 2px var(--panel) inset, 0 0 0 4px var(--club); }
@@ -497,6 +504,11 @@
     </div>
     <div id="challenges-list"></div>
 
+    <div class="view-head" style="margin-top:28px;">
+      <div><h1 style="font-size:1.3rem;">🏅 Badges de la saison</h1><p>Débloqués automatiquement dès qu'une équipe remplit la condition.</p></div>
+    </div>
+    <div id="badges-list"></div>
+
     <div class="view-head" style="margin-top:32px;">
       <div><h1 style="font-size:1.3rem;">💡 Défis proposés par les joueurs</h1><p>Tout le monde peut proposer un défi — le vestiaire vote, l'admin valide.</p></div>
       <button class="btn small" onclick="openProposeModal()">+ Proposer un défi</button>
@@ -583,6 +595,10 @@
 
 <div class="modal-overlay" id="confirm-modal">
   <div class="modal-card" id="confirm-modal-content" style="max-width:380px;"></div>
+</div>
+
+<div class="modal-overlay" id="badge-points-modal">
+  <div class="modal-card" id="badge-points-modal-content" style="max-width:380px;"></div>
 </div>
 
 <script>
@@ -854,6 +870,10 @@
         const pts = c ? c.pts : 0;
         if (d.team === 'noir') noir += pts; else if (d.team === 'blanc') blanc += pts;
       });
+    });
+    badgeDefs.forEach(b => {
+      if (isBadgeEarned(b.key, 'noir')) noir += (b.pts || 0);
+      if (isBadgeEarned(b.key, 'blanc')) blanc += (b.pts || 0);
     });
     return { noir, blanc };
   }
@@ -1374,6 +1394,119 @@
       </div>`).join('');
   }
 
+  const badgeDefs = [
+    { key: 'streak5', icon: '🔥', title: '5 à la suite', desc: '5 victoires consécutives', pts: 200 },
+    { key: 'grandchelem', icon: '🏆', title: 'Grand Chelem', desc: 'Tous les défis validés au moins une fois', pts: 500 },
+    { key: 'combo', icon: '🎯', title: 'Combo Parfait', desc: 'Au moins 2 défis validés sur le même match', pts: 150 },
+    { key: 'cavalcade', icon: '🥅', title: 'Avalanche de buts', desc: '8 buts ou plus inscrits dans un seul match', pts: 150 },
+    { key: 'goals100', icon: '🥉', title: 'Cap des 100 buts', desc: 'Première équipe à atteindre 100 buts sur la saison', pts: 100 },
+    { key: 'goals200', icon: '🥈', title: 'Cap des 200 buts', desc: 'Première équipe à atteindre 200 buts sur la saison', pts: 200 },
+    { key: 'goals300', icon: '🥇', title: 'Cap des 300 buts', desc: 'Première équipe à atteindre 300 buts sur la saison', pts: 300 },
+    { key: 'blackstreak', icon: '🤡', title: 'Série Noire', desc: '5 défaites consécutives (ça arrive aux meilleurs)', pts: 0 },
+  ];
+  function firstTeamToReachGoals(threshold) {
+    const chronological = [...results].reverse();
+    let cumNoir = 0, cumBlanc = 0;
+    for (const r of chronological) {
+      cumNoir += r.scoreNoir;
+      cumBlanc += r.scoreBlanc;
+      const noirHit = cumNoir >= threshold;
+      const blancHit = cumBlanc >= threshold;
+      if (noirHit && blancHit) return null; // atteint le même match, pas de premier clair
+      if (noirHit) return 'noir';
+      if (blancHit) return 'blanc';
+    }
+    return null;
+  }
+  function computeStreaks(team) {
+    const chronological = [...results].reverse();
+    let maxWin = 0, curWin = 0, maxLoss = 0, curLoss = 0;
+    chronological.forEach(r => {
+      const win = (team === 'noir' && r.scoreNoir > r.scoreBlanc) || (team === 'blanc' && r.scoreBlanc > r.scoreNoir);
+      const loss = (team === 'noir' && r.scoreNoir < r.scoreBlanc) || (team === 'blanc' && r.scoreBlanc < r.scoreNoir);
+      if (win) { curWin++; maxWin = Math.max(maxWin, curWin); curLoss = 0; }
+      else if (loss) { curLoss++; maxLoss = Math.max(maxLoss, curLoss); curWin = 0; }
+      else { curWin = 0; curLoss = 0; }
+    });
+    return { maxWin, maxLoss };
+  }
+  function hasGrandChelem(team) {
+    const validated = new Set();
+    results.forEach(r => r.defis.forEach(d => { if (d.team === team) validated.add(d.title); }));
+    return challengesCatalog.length > 0 && challengesCatalog.every(c => validated.has(c.title));
+  }
+  function hasComboParfait(team) {
+    return results.some(r => r.defis.filter(d => d.team === team).length >= 2);
+  }
+  function hasCavalcade(team) {
+    return results.some(r => (team === 'noir' ? r.scoreNoir : r.scoreBlanc) >= 8);
+  }
+  function isBadgeEarned(key, team) {
+    const s = computeStreaks(team);
+    if (key === 'streak5') return s.maxWin >= 5;
+    if (key === 'grandchelem') return hasGrandChelem(team);
+    if (key === 'combo') return hasComboParfait(team);
+    if (key === 'cavalcade') return hasCavalcade(team);
+    if (key === 'goals100') return firstTeamToReachGoals(100) === team;
+    if (key === 'goals200') return firstTeamToReachGoals(200) === team;
+    if (key === 'goals300') return firstTeamToReachGoals(300) === team;
+    if (key === 'blackstreak') return s.maxLoss >= 5;
+    return false;
+  }
+  function renderBadges() {
+    const el = document.getElementById('badges-list');
+    if (!el) return;
+    el.innerHTML = ['noir', 'blanc'].map(team => `
+      <div class="badge-team-label">${teamName(team)}</div>
+      <div class="badges-grid">
+        ${badgeDefs.map(b => {
+          const earned = isBadgeEarned(b.key, team);
+          return `
+          <div class="badge-card ${earned ? '' : 'locked'}">
+            <div class="badge-icon">${b.icon}</div>
+            <div class="badge-title">${b.title}</div>
+            <div class="badge-desc">${b.desc}</div>
+            ${b.pts !== undefined ? `<div class="badge-desc" style="font-weight:700; color:var(--club); margin-top:4px; display:flex; align-items:center; justify-content:center; gap:5px;">+${b.pts} pts <span class="admin-only" style="cursor:pointer;" onclick="openEditBadgePoints('${b.key}')" title="Modifier les points">✏️</span></div>` : ''}
+          </div>`;
+        }).join('')}
+      </div>`).join('');
+  }
+
+  let editingBadgeKey = null;
+  function openEditBadgePoints(key) {
+    editingBadgeKey = key;
+    const b = badgeDefs.find(bb => bb.key === key);
+    document.getElementById('badge-points-modal-content').innerHTML = `
+      <div class="modal-head">
+        <div class="modal-icon" style="background:#DCEAF7;">${b.icon}</div>
+        <h2>Points du<br>badge</h2>
+        <button class="modal-close" onclick="closeBadgePointsModal()">✕</button>
+      </div>
+      <div class="modal-sub">${b.title}</div>
+      <div class="modal-body">
+        <div class="custom-label" style="margin-top:0;">Points attribués</div>
+        <input type="number" id="badge-points-input" value="${b.pts}" min="0">
+      </div>
+      <div class="modal-actions">
+        <div class="modal-actions-row">
+          <button class="btn-ghost-modal" onclick="closeBadgePointsModal()">Annuler</button>
+          <button class="btn-sheet-confirm" onclick="saveBadgePoints()">✓ Enregistrer</button>
+        </div>
+      </div>`;
+    document.getElementById('badge-points-modal').classList.add('open');
+  }
+  function closeBadgePointsModal() {
+    document.getElementById('badge-points-modal').classList.remove('open');
+    editingBadgeKey = null;
+  }
+  function saveBadgePoints() {
+    const b = badgeDefs.find(bb => bb.key === editingBadgeKey);
+    const val = parseInt(document.getElementById('badge-points-input').value, 10);
+    if (b) b.pts = isNaN(val) ? b.pts : val;
+    closeBadgePointsModal();
+    renderChallenges();
+  }
+
   function renderChallenges() {
     const { noir: ptsNoir, blanc: ptsBlanc } = computeClassement();
     document.getElementById('pts-noir').textContent = ptsNoir;
@@ -1392,6 +1525,7 @@
         </div>
       </div>`).join('');
     renderProposals();
+    renderBadges();
   }
 
   function computeVotes(p) {
