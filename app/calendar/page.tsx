@@ -51,6 +51,7 @@ export default function CalendarPage() {
     const { data: trainingsData } = await supabase
       .from('trainings')
       .select('id, date_time, location')
+      .gte('date_time', new Date().toISOString())
       .order('date_time', { ascending: true })
 
     setTrainings(trainingsData || [])
