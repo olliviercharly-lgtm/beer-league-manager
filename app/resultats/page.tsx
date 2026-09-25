@@ -8,14 +8,14 @@ const CLUB_BLUE = '#003F6E'
 
 type Player = { id: string; role: string }
 type Training = { id: string; date_time: string; location: string }
-type MatchResult = { id: string; training_id: string; score_noir: number; score_blanc: number }
-type Highlight = { id: string; match_result_id: string; content: string }
+type Result = { id: string; training_id: string; score_noir: number; score_blanc: number }
+type Highlight = { id: string; result_id: string; text: string; position: number }
 
 export default function ResultatsPage() {
   const supabase = createClient()
   const [me, setMe] = useState<Player | null>(null)
   const [pastTrainings, setPastTrainings] = useState<Training[]>([])
-  const [results, setResults] = useState<MatchResult[]>([])
+  const [results, setResults] = useState<Result[]>([])
   const [highlights, setHighlights] = useState<Highlight[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -24,6 +24,7 @@ export default function ResultatsPage() {
   const [scoreBlanc, setScoreBlanc] = useState('')
   const [highlightInputs, setHighlightInputs] = useState<string[]>([''])
   const [saving, setSaving] = useState(false)
+  const [formError, setFormError] = useState('')
 
   async function loadAll() {
     const { data: { user } } = await supabase.auth.getUser()
@@ -46,7 +47,7 @@ export default function ResultatsPage() {
     const trainingIds = (trainingsData || []).map((t) => t.id)
     if (trainingIds.length > 0) {
       const { data: resultsData } = await supabase
-        .from('match_results')
+        .from('results')
         .select('id, training_id, score_noir, score_blanc')
         .in('training_id', trainingIds)
       setResults(resultsData || [])
@@ -54,9 +55,10 @@ export default function ResultatsPage() {
       const resultIds = (resultsData || []).map((r) => r.id)
       if (resultIds.length > 0) {
         const { data: highlightsData } = await supabase
-          .from('match_highlights')
-          .select('id, match_result_id, content')
-          .in('match_result_id', resultIds)
+          .from('highlights')
+          .select('id, result_id, text, position')
+          .in('result_id', resultIds)
+          .order('position', { ascending: true })
         setHighlights(highlightsData || [])
       } else {
         setHighlights([])
@@ -118,37 +120,37 @@ export default function ResultatsPage() {
 
   async function handleSubmitResult(e: React.FormEvent) {
     e.preventDefault()
-    if (!me || !selectedTrainingId) return
+    if (!selectedTrainingId) return
     setSaving(true)
-
-    const { data: meLeague } = await supabase
-      .from('players')
-      .select('league_id')
-      .eq('id', me.id)
-      .single()
+    setFormError('')
 
     const { data: newResult, error } = await supabase
-      .from('match_results')
+      .from('results')
       .insert({
         training_id: selectedTrainingId,
-        league_id: meLeague?.league_id,
         score_noir: Number(scoreNoir) || 0,
         score_blanc: Number(scoreBlanc) || 0,
+        updated_at: new Date().toISOString(),
       })
       .select()
       .single()
 
-    if (!error && newResult) {
-      const validHighlights = highlightInputs.filter((h) => h.trim() !== '')
-      if (validHighlights.length > 0) {
-        await supabase.from('match_highlights').insert(
-          validHighlights.map((content) => ({
-            match_result_id: newResult.id,
-            league_id: meLeague?.league_id,
-            content,
-          }))
-        )
-      }
+    if (error) {
+      setFormError(error.message)
+      setSaving(false)
+      return
+    }
+
+    const validHighlights = highlightInputs.filter((h) => h.trim() !== '')
+    if (validHighlights.length > 0 && newResult) {
+      const { error: highlightsError } = await supabase.from('highlights').insert(
+        validHighlights.map((text, i) => ({
+          result_id: newResult.id,
+          text,
+          position: i,
+        }))
+      )
+      if (highlightsError) setFormError(highlightsError.message)
     }
 
     setSelectedTrainingId('')
@@ -243,6 +245,8 @@ export default function ResultatsPage() {
                 </button>
               </div>
 
+              {formError && <p style={{ color: '#B23A2E', fontSize: 13 }}>{formError}</p>}
+
               <button type="submit" disabled={saving} style={{ padding: '8px 16px', borderRadius: 6, background: CLUB_BLUE, color: '#fff', border: 'none', cursor: 'pointer', alignSelf: 'flex-start' }}>
                 {saving ? 'Enregistrement...' : 'Enregistrer le résultat'}
               </button>
@@ -256,7 +260,7 @@ export default function ResultatsPage() {
           .filter((t) => results.some((r) => r.training_id === t.id))
           .map((training) => {
             const result = results.find((r) => r.training_id === training.id)!
-            const matchHighlights = highlights.filter((h) => h.match_result_id === result.id)
+            const matchHighlights = highlights.filter((h) => h.result_id === result.id)
 
             return (
               <div key={training.id} style={{ border: '1px solid #eee', borderTop: `4px solid ${CLUB_BLUE}`, borderRadius: 20, padding: 16, marginBottom: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
@@ -274,7 +278,7 @@ export default function ResultatsPage() {
                 </div>
                 {matchHighlights.length > 0 && (
                   <ul style={{ margin: 0, paddingLeft: 20, fontSize: 14, color: '#333' }}>
-                    {matchHighlights.map((h) => <li key={h.id}>{h.content}</li>)}
+                    {matchHighlights.map((h) => <li key={h.id}>{h.text}</li>)}
                   </ul>
                 )}
               </div>
