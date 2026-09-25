@@ -6,7 +6,7 @@ import NavBar from '@/app/components/NavBar'
 
 const CLUB_BLUE = '#003F6E'
 
-type Player = { id: string; role: string }
+type Player = { id: string; role: string; league_id: string }
 type Challenge = {
   id: string
   icon: string | null
@@ -39,7 +39,7 @@ export default function DefisPage() {
 
     const { data: meData } = await supabase
       .from('players')
-      .select('id, role')
+      .select('id, role, league_id')
       .eq('auth_user_id', user.id)
       .single()
     setMe(meData)
@@ -99,6 +99,7 @@ export default function DefisPage() {
     setFormError('')
 
     const { error } = await supabase.from('challenges').insert({
+      league_id: me?.league_id,
       title: newTitle,
       description: newDescription || null,
       points: Number(newPoints) || 0,
