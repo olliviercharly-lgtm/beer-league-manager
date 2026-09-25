@@ -10,6 +10,7 @@ type Player = { id: string; role: string }
 type Training = { id: string; date_time: string; location: string }
 type Result = { id: string; training_id: string; score_noir: number; score_blanc: number }
 type Highlight = { id: string; result_id: string; text: string; position: number }
+type Challenge = { id: string; title: string; points: number }
 
 export default function ResultatsPage() {
   const supabase = createClient()
@@ -25,6 +26,9 @@ export default function ResultatsPage() {
   const [highlightInputs, setHighlightInputs] = useState<string[]>([''])
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
+  const [activeChallenges, setActiveChallenges] = useState<Challenge[]>([])
+  const [checkedNoir, setCheckedNoir] = useState<string[]>([])
+  const [checkedBlanc, setCheckedBlanc] = useState<string[]>([])
 
   async function loadAll() {
     const { data: { user } } = await supabase.auth.getUser()
@@ -67,6 +71,12 @@ export default function ResultatsPage() {
       setResults([])
       setHighlights([])
     }
+
+    const { data: challengesData } = await supabase
+      .from('challenges')
+      .select('id, title, points')
+      .eq('status', 'active')
+    setActiveChallenges(challengesData || [])
 
     setLoading(false)
   }
@@ -153,6 +163,18 @@ export default function ResultatsPage() {
       if (highlightsError) setFormError(highlightsError.message)
     }
 
+    if (newResult) {
+      const rows = [
+        ...checkedNoir.map((challenge_id) => ({ result_id: newResult.id, challenge_id, team: 'noir' })),
+        ...checkedBlanc.map((challenge_id) => ({ result_id: newResult.id, challenge_id, team: 'blanc' })),
+      ]
+      if (rows.length > 0) {
+        await supabase.from('result_challenges').insert(rows)
+      }
+    }
+
+    setCheckedNoir([])
+    setCheckedBlanc([])
     setSelectedTrainingId('')
     setScoreNoir('')
     setScoreBlanc('')
@@ -244,6 +266,45 @@ export default function ResultatsPage() {
                   + Ajouter un fait saillant
                 </button>
               </div>
+
+              {activeChallenges.length > 0 && (
+                <div style={{ display: 'flex', gap: 16 }}>
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontSize: 13, fontWeight: 'bold' }}>Défis validés — Noir</span>
+                    {activeChallenges.map((c) => (
+                      <label key={c.id} style={{ display: 'block', fontSize: 13, marginTop: 4 }}>
+                        <input
+                          type="checkbox"
+                          checked={checkedNoir.includes(c.id)}
+                          onChange={(e) =>
+                            setCheckedNoir(
+                              e.target.checked ? [...checkedNoir, c.id] : checkedNoir.filter((id) => id !== c.id)
+                            )
+                          }
+                        />{' '}
+                        {c.title} ({c.points} pts)
+                      </label>
+                    ))}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontSize: 13, fontWeight: 'bold' }}>Défis validés — Blanc</span>
+                    {activeChallenges.map((c) => (
+                      <label key={c.id} style={{ display: 'block', fontSize: 13, marginTop: 4 }}>
+                        <input
+                          type="checkbox"
+                          checked={checkedBlanc.includes(c.id)}
+                          onChange={(e) =>
+                            setCheckedBlanc(
+                              e.target.checked ? [...checkedBlanc, c.id] : checkedBlanc.filter((id) => id !== c.id)
+                            )
+                          }
+                        />{' '}
+                        {c.title} ({c.points} pts)
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {formError && <p style={{ color: '#B23A2E', fontSize: 13 }}>{formError}</p>}
 
