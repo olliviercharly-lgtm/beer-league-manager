@@ -27,11 +27,6 @@ type AttendanceRow = {
   players: { first_name: string; last_name: string; team: string } | null
 }
 
-type LeagueSettings = {
-  doodle_ics_url: string | null
-  doodle_title_filter: string | null
-}
-
 export default function CalendarPage() {
   const supabase = createClient()
   const [me, setMe] = useState<Player | null>(null)
@@ -40,13 +35,6 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(true)
   const [newDate, setNewDate] = useState('')
   const [newLocation, setNewLocation] = useState('')
-
-  const [league, setLeague] = useState<LeagueSettings | null>(null)
-  const [doodleUrl, setDoodleUrl] = useState('')
-  const [doodleFilter, setDoodleFilter] = useState('')
-  const [savingSettings, setSavingSettings] = useState(false)
-  const [syncing, setSyncing] = useState(false)
-  const [syncMessage, setSyncMessage] = useState('')
 
   async function loadAll() {
     const { data: { user } } = await supabase.auth.getUser()
@@ -59,20 +47,6 @@ export default function CalendarPage() {
       .single()
 
     setMe(meData)
-
-    if (meData) {
-      const { data: leagueData } = await supabase
-        .from('leagues')
-        .select('doodle_ics_url, doodle_title_filter')
-        .eq('id', meData.league_id)
-        .single()
-
-      if (leagueData) {
-        setLeague(leagueData)
-        setDoodleUrl(leagueData.doodle_ics_url || '')
-        setDoodleFilter(leagueData.doodle_title_filter || '')
-      }
-    }
 
     const { data: trainingsData } = await supabase
       .from('trainings')
@@ -115,32 +89,6 @@ export default function CalendarPage() {
     loadAll()
   }
 
-  async function saveDoodleSettings(e: React.FormEvent) {
-    e.preventDefault()
-    setSavingSettings(true)
-    await fetch('/api/league-doodle', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ doodleIcsUrl: doodleUrl, doodleTitleFilter: doodleFilter }),
-    })
-    setSavingSettings(false)
-    loadAll()
-  }
-
-  async function syncDoodle() {
-    setSyncing(true)
-    setSyncMessage('')
-    const res = await fetch('/api/sync-doodle', { method: 'POST' })
-    const data = await res.json()
-    if (res.ok) {
-      setSyncMessage(`Synchronisé : ${data.created} créé(s), ${data.updated} mis à jour.`)
-    } else {
-      setSyncMessage(`Erreur : ${data.error}`)
-    }
-    setSyncing(false)
-    loadAll()
-  }
-
   if (loading) return <p style={{ padding: 40 }}>Chargement...</p>
 
   const isAdmin = me?.role === 'admin' || me?.role === 'super_admin'
@@ -152,72 +100,25 @@ export default function CalendarPage() {
         <h1 style={{ marginBottom: 24 }}>Calendrier des entraînements</h1>
 
         {isAdmin && (
-          <>
-            <details style={{ marginBottom: 24, border: '1px solid #ddd', borderRadius: 8, padding: 12 }}>
-              <summary style={{ cursor: 'pointer', fontWeight: 'bold' }}>Synchronisation Doodle</summary>
-
-              <form onSubmit={saveDoodleSettings} style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
-                <label style={{ fontSize: 13, color: '#555' }}>
-                  URL iCal du Doodle (dans Doodle : menu &quot;…&quot; → &quot;Exporter&quot; → copier le lien iCal)
-                </label>
-                <input
-                  placeholder="https://doodle.com/.../ical"
-                  value={doodleUrl}
-                  onChange={(e) => setDoodleUrl(e.target.value)}
-                  style={{ padding: 8, border: '1px solid #ccc', borderRadius: 6 }}
-                />
-                <label style={{ fontSize: 13, color: '#555' }}>
-                  Filtre sur le titre (optionnel, ex : &quot;Entraînement&quot;)
-                </label>
-                <input
-                  placeholder="Entraînement"
-                  value={doodleFilter}
-                  onChange={(e) => setDoodleFilter(e.target.value)}
-                  style={{ padding: 8, border: '1px solid #ccc', borderRadius: 6 }}
-                />
-                <button
-                  type="submit"
-                  disabled={savingSettings}
-                  style={{ padding: '8px 16px', borderRadius: 6, background: '#333', color: '#fff', border: 'none', cursor: 'pointer', alignSelf: 'flex-start' }}
-                >
-                  {savingSettings ? 'Enregistrement...' : 'Enregistrer'}
-                </button>
-              </form>
-
-              {league?.doodle_ics_url && (
-                <div style={{ marginTop: 16 }}>
-                  <button
-                    onClick={syncDoodle}
-                    disabled={syncing}
-                    style={{ padding: '8px 16px', borderRadius: 6, background: '#2E7D5B', color: '#fff', border: 'none', cursor: 'pointer' }}
-                  >
-                    {syncing ? 'Synchronisation...' : 'Synchroniser avec Doodle'}
-                  </button>
-                  {syncMessage && <p style={{ marginTop: 8, fontSize: 13, color: '#555' }}>{syncMessage}</p>}
-                </div>
-              )}
-            </details>
-
-            <form onSubmit={createTraining} style={{ display: 'flex', gap: 8, marginBottom: 32, flexWrap: 'wrap' }}>
-              <input
-                type="datetime-local"
-                value={newDate}
-                onChange={(e) => setNewDate(e.target.value)}
-                required
-                style={{ padding: 8, border: '1px solid #ccc', borderRadius: 6 }}
-              />
-              <input
-                placeholder="Lieu"
-                value={newLocation}
-                onChange={(e) => setNewLocation(e.target.value)}
-                required
-                style={{ padding: 8, border: '1px solid #ccc', borderRadius: 6, flex: 1 }}
-              />
-              <button type="submit" style={{ padding: '8px 16px', borderRadius: 6, background: '#2E7D5B', color: '#fff', border: 'none', cursor: 'pointer' }}>
-                Ajouter
-              </button>
-            </form>
-          </>
+          <form onSubmit={createTraining} style={{ display: 'flex', gap: 8, marginBottom: 32, flexWrap: 'wrap' }}>
+            <input
+              type="datetime-local"
+              value={newDate}
+              onChange={(e) => setNewDate(e.target.value)}
+              required
+              style={{ padding: 8, border: '1px solid #ccc', borderRadius: 6 }}
+            />
+            <input
+              placeholder="Lieu"
+              value={newLocation}
+              onChange={(e) => setNewLocation(e.target.value)}
+              required
+              style={{ padding: 8, border: '1px solid #ccc', borderRadius: 6, flex: 1 }}
+            />
+            <button type="submit" style={{ padding: '8px 16px', borderRadius: 6, background: '#2E7D5B', color: '#fff', border: 'none', cursor: 'pointer' }}>
+              Ajouter
+            </button>
+          </form>
         )}
 
         {trainings.length === 0 && <p>Aucun entraînement programmé pour le moment.</p>}
