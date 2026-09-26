@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import NavBar from '@/app/components/NavBar'
 
+const CLUB_BLUE = '#003F6E'
+
 type Player = {
   id: string
   league_id: string
@@ -98,26 +100,30 @@ export default function CalendarPage() {
   return (
     <div>
       <NavBar />
-      <div style={{ maxWidth: 700, margin: '40px auto', fontFamily: 'sans-serif', padding: '0 16px' }}>
-        <h1 style={{ marginBottom: 24 }}>Calendrier des entraînements</h1>
+      <div style={{ maxWidth: 720, margin: '0 auto 40px', fontFamily: 'sans-serif', padding: '0 16px' }}>
+        <h1 style={{ marginBottom: 24, color: CLUB_BLUE, fontSize: 26 }}>Calendrier des entraînements</h1>
 
         {isAdmin && (
-          <form onSubmit={createTraining} style={{ display: 'flex', gap: 8, marginBottom: 32, flexWrap: 'wrap' }}>
+          <form
+            onSubmit={createTraining}
+            className="blm-card"
+            style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap', alignItems: 'center' }}
+          >
             <input
               type="datetime-local"
               value={newDate}
               onChange={(e) => setNewDate(e.target.value)}
               required
-              style={{ padding: 8, border: '1px solid #ccc', borderRadius: 6 }}
+              style={{ padding: 8, border: '1px solid #ddd', borderRadius: 10 }}
             />
             <input
               placeholder="Lieu"
               value={newLocation}
               onChange={(e) => setNewLocation(e.target.value)}
               required
-              style={{ padding: 8, border: '1px solid #ccc', borderRadius: 6, flex: 1 }}
+              style={{ padding: 8, border: '1px solid #ddd', borderRadius: 10, flex: 1 }}
             />
-            <button type="submit" style={{ padding: '8px 16px', borderRadius: 6, background: '#2E7D5B', color: '#fff', border: 'none', cursor: 'pointer' }}>
+            <button type="submit" className="blm-btn-primary">
               Ajouter
             </button>
           </form>
@@ -132,17 +138,17 @@ export default function CalendarPage() {
           const myRow = rows.find((r) => r.player_id === me?.id)
 
           return (
-            <div key={training.id} style={{ border: '1px solid #ddd', borderRadius: 8, padding: 16, marginBottom: 16 }}>
-              <div style={{ fontWeight: 'bold', marginBottom: 4 }}>
+            <div key={training.id} className="blm-card" style={{ marginBottom: 16 }}>
+              <div style={{ fontWeight: 'bold', marginBottom: 4, fontSize: 16 }}>
                 {new Date(training.date_time).toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
               </div>
-              <div style={{ color: '#555', marginBottom: 12 }}>{training.location}</div>
+              <div style={{ color: '#666', marginBottom: 14 }}>{training.location}</div>
 
-              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
                 <button
                   onClick={() => setMyStatus(training.id, 'present')}
                   style={{
-                    padding: '6px 12px', borderRadius: 6, border: '1px solid #2E7D5B', cursor: 'pointer',
+                    padding: '6px 16px', borderRadius: 20, border: '1px solid #2E7D5B', cursor: 'pointer', fontWeight: 500,
                     background: myRow?.status === 'present' ? '#2E7D5B' : '#fff',
                     color: myRow?.status === 'present' ? '#fff' : '#2E7D5B',
                   }}
@@ -152,7 +158,7 @@ export default function CalendarPage() {
                 <button
                   onClick={() => setMyStatus(training.id, 'forfait')}
                   style={{
-                    padding: '6px 12px', borderRadius: 6, border: '1px solid #B23A2E', cursor: 'pointer',
+                    padding: '6px 16px', borderRadius: 20, border: '1px solid #B23A2E', cursor: 'pointer', fontWeight: 500,
                     background: myRow?.status === 'forfait' ? '#B23A2E' : '#fff',
                     color: myRow?.status === 'forfait' ? '#fff' : '#B23A2E',
                   }}
@@ -165,7 +171,7 @@ export default function CalendarPage() {
                 <strong>{presents.length}</strong> présent(s) · <strong>{forfaits.length}</strong> forfait(s)
               </div>
               {presents.length > 0 && (
-                <div style={{ fontSize: 13, color: '#666', marginTop: 4 }}>
+                <div style={{ fontSize: 13, color: '#888', marginTop: 4 }}>
                   {presents.map((r) => `${r.players?.first_name} ${r.players?.last_name}`).join(', ')}
                 </div>
               )}
