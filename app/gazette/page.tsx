@@ -220,12 +220,12 @@ export default function GazettePage() {
     <div>
       <NavBar />
       <div style={{ maxWidth: 700, margin: '40px auto', fontFamily: 'sans-serif', padding: '0 16px' }}>
-        <h1 style={{ marginBottom: 16 }}>La Gazette</h1>
+        <h1 style={{ marginBottom: 16, color: CLUB_BLUE, fontSize: 26 }}>La Gazette</h1>
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
           <button
             onClick={() => setFilterTheme('all')}
-            style={{ padding: '6px 14px', borderRadius: 20, border: `1px solid ${CLUB_BLUE}`, cursor: 'pointer', background: filterTheme === 'all' ? CLUB_BLUE : '#fff', color: filterTheme === 'all' ? '#fff' : CLUB_BLUE }}
+            className={filterTheme === 'all' ? 'blm-pill-active' : 'blm-pill'}
           >
             Tous
           </button>
@@ -233,7 +233,7 @@ export default function GazettePage() {
             <button
               key={t.value}
               onClick={() => setFilterTheme(t.value)}
-              style={{ padding: '6px 14px', borderRadius: 20, border: `1px solid ${CLUB_BLUE}`, cursor: 'pointer', background: filterTheme === t.value ? CLUB_BLUE : '#fff', color: filterTheme === t.value ? '#fff' : CLUB_BLUE }}
+              className={filterTheme === t.value ? 'blm-pill-active' : 'blm-pill'}
             >
               {t.label}
             </button>
@@ -242,13 +242,14 @@ export default function GazettePage() {
 
         <button
           onClick={() => setShowForm((s) => !s)}
-          style={{ marginBottom: 24, padding: '10px 16px', borderRadius: 8, border: 'none', background: CLUB_BLUE, color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}
+          className="blm-btn-primary"
+          style={{ marginBottom: 24 }}
         >
           {showForm ? 'Annuler' : '✍️ Générer un article'}
         </button>
 
         {showForm && (
-          <div style={{ border: '1px solid #ccc', borderRadius: 12, padding: 16, marginBottom: 24 }}>
+          <div className="blm-card" style={{ marginBottom: 24 }}>
             <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>Thème</label>
             <select
               value={genTheme}
@@ -321,7 +322,8 @@ export default function GazettePage() {
             <button
               onClick={handleGenerate}
               disabled={generating}
-              style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: CLUB_BLUE, color: '#fff', cursor: 'pointer', fontWeight: 'bold', opacity: generating ? 0.6 : 1 }}
+              className="blm-btn-primary"
+              style={{ opacity: generating ? 0.6 : 1 }}
             >
               {generating ? 'Génération en cours...' : 'Générer'}
             </button>
@@ -343,7 +345,7 @@ export default function GazettePage() {
                   <button
                     onClick={handlePublish}
                     disabled={publishing}
-                    style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: CLUB_BLUE, color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}
+                    className="blm-btn-primary"
                   >
                     {publishing ? 'Publication...' : 'Publier'}
                   </button>
@@ -362,7 +364,7 @@ export default function GazettePage() {
           const canDelete = me && (me.id === article.author_id || me.is_admin || me.role === 'admin')
 
           return (
-            <div key={article.id} style={{ border: '1px solid #ddd', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+            <div key={article.id} className="blm-card" style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>{themeLabel(article.theme)}</div>
               <h3 style={{ marginBottom: 4 }}>{article.title}</h3>
               <div style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>

@@ -191,10 +191,10 @@ export default function ResultatsPage() {
     <div>
       <NavBar />
       <div style={{ maxWidth: 700, margin: '40px auto', fontFamily: 'sans-serif', padding: '0 16px' }}>
-        <h1 style={{ marginBottom: 24 }}>Résultats</h1>
+        <h1 style={{ marginBottom: 24, color: CLUB_BLUE, fontSize: 26 }}>Résultats</h1>
 
         {results.length > 0 && (
-          <div style={{ border: '1px solid #eee', borderTop: `4px solid ${CLUB_BLUE}`, borderRadius: 20, padding: 20, marginBottom: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+          <div className="blm-card" style={{ marginBottom: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 6 }}>
               <span>Noir — {seasonStats.winsNoir} victoire(s) ({seasonStats.goalsNoir}b)</span>
               <span>Blanc — {seasonStats.winsBlanc} victoire(s) ({seasonStats.goalsBlanc}b)</span>
@@ -221,7 +221,7 @@ export default function ResultatsPage() {
         )}
 
         {isAdmin && trainingsWithoutResult.length > 0 && (
-          <details style={{ marginBottom: 24, border: '1px solid #ddd', borderRadius: 12, padding: 12 }}>
+          <details className="blm-card" style={{ marginBottom: 24 }}>
             <summary style={{ cursor: 'pointer', fontWeight: 'bold' }}>Ajouter un résultat</summary>
             <form onSubmit={handleSubmitResult} style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
               <select
@@ -308,7 +308,7 @@ export default function ResultatsPage() {
 
               {formError && <p style={{ color: '#B23A2E', fontSize: 13 }}>{formError}</p>}
 
-              <button type="submit" disabled={saving} style={{ padding: '8px 16px', borderRadius: 6, background: CLUB_BLUE, color: '#fff', border: 'none', cursor: 'pointer', alignSelf: 'flex-start' }}>
+              <button type="submit" disabled={saving} className="blm-btn-primary" style={{ alignSelf: 'flex-start' }}>
                 {saving ? 'Enregistrement...' : 'Enregistrer le résultat'}
               </button>
             </form>
@@ -324,7 +324,7 @@ export default function ResultatsPage() {
             const matchHighlights = highlights.filter((h) => h.result_id === result.id)
 
             return (
-              <div key={training.id} style={{ border: '1px solid #eee', borderTop: `4px solid ${CLUB_BLUE}`, borderRadius: 20, padding: 16, marginBottom: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+              <div key={training.id} className="blm-card" style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>
                   {new Date(training.date_time).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} · {training.location}
                 </div>

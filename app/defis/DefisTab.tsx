@@ -147,7 +147,7 @@ export default function DefisTab() {
 
   return (
     <>
-      <div style={{ border: '1px solid #eee', borderTop: `4px solid ${CLUB_BLUE}`, borderRadius: 20, padding: 20, marginBottom: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+      <div className="blm-card" style={{ marginBottom: 24 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 6 }}>
             <span>Noir — {classement.noir} pts</span>
             <span>Blanc — {classement.blanc} pts</span>
@@ -161,7 +161,7 @@ export default function DefisTab() {
         <h2 style={{ fontSize: 18, marginBottom: 12 }}>Défis officiels</h2>
         {activeChallenges.length === 0 && <p style={{ color: '#666' }}>Aucun défi officiel pour le moment.</p>}
         {activeChallenges.map((c) => (
-          <div key={c.id} style={{ border: '1px solid #eee', borderTop: `4px solid ${CLUB_BLUE}`, borderRadius: 16, padding: 14, marginBottom: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+          <div key={c.id} className="blm-card" style={{ marginBottom: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <strong>{c.icon ? `${c.icon} ` : ''}{c.title}</strong>
               <span style={{ color: CLUB_BLUE, fontWeight: 'bold' }}>{c.points} pts</span>
@@ -201,7 +201,7 @@ export default function DefisTab() {
               <input type="number" value={newPoints} onChange={(e) => setNewPoints(e.target.value)} style={{ width: 80, marginLeft: 8, padding: 8, border: '1px solid #ccc', borderRadius: 6 }} />
             </label>
             {formError && <p style={{ color: '#B23A2E', fontSize: 13 }}>{formError}</p>}
-            <button type="submit" disabled={saving} style={{ padding: '8px 16px', borderRadius: 6, background: CLUB_BLUE, color: '#fff', border: 'none', cursor: 'pointer', alignSelf: 'flex-start' }}>
+            <button type="submit" disabled={saving} className="blm-btn-primary" style={{ alignSelf: 'flex-start' }}>
               {saving ? 'Enregistrement...' : isAdmin ? 'Ajouter à la liste officielle' : 'Proposer ce défi'}
             </button>
           </form>
@@ -217,7 +217,7 @@ export default function DefisTab() {
               const myVote = challengeVotes.find((v) => v.player_id === me?.id)
 
               return (
-                <div key={c.id} style={{ border: '1px solid #eee', borderTop: `4px solid ${CLUB_BLUE}`, borderRadius: 16, padding: 14, marginBottom: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                <div key={c.id} className="blm-card" style={{ marginBottom: 12 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <strong>{c.title}</strong>
                     <span style={{ color: CLUB_BLUE, fontWeight: 'bold' }}>{c.points} pts</span>

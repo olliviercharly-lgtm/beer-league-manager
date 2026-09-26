@@ -14,25 +14,17 @@ export default function DefisPage() {
     <div>
       <NavBar />
       <div style={{ maxWidth: 800, margin: '40px auto', fontFamily: 'sans-serif', padding: '0 16px' }}>
-        <h1 style={{ marginBottom: 16 }}>Défis</h1>
+        <h1 style={{ marginBottom: 16, color: CLUB_BLUE, fontSize: 26 }}>Défis</h1>
         <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
           <button
             onClick={() => setTab('defis')}
-            style={{
-              padding: '8px 16px', borderRadius: 20, border: `1px solid ${CLUB_BLUE}`, cursor: 'pointer',
-              background: tab === 'defis' ? CLUB_BLUE : '#fff',
-              color: tab === 'defis' ? '#fff' : CLUB_BLUE,
-            }}
+            className={tab === 'defis' ? 'blm-pill-active' : 'blm-pill'}
           >
             Défis
           </button>
           <button
             onClick={() => setTab('badges')}
-            style={{
-              padding: '8px 16px', borderRadius: 20, border: `1px solid ${CLUB_BLUE}`, cursor: 'pointer',
-              background: tab === 'badges' ? CLUB_BLUE : '#fff',
-              color: tab === 'badges' ? '#fff' : CLUB_BLUE,
-            }}
+            className={tab === 'badges' ? 'blm-pill-active' : 'blm-pill'}
           >
             Badges
           </button>

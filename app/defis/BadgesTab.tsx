@@ -222,7 +222,7 @@ export default function BadgesTab() {
 
   return (
     <>
-      <div style={{ border: '1px solid #eee', borderTop: `4px solid ${CLUB_BLUE}`, borderRadius: 20, padding: 20, marginBottom: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+      <div className="blm-card" style={{ marginBottom: 24 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 6 }}>
             <span>Noir — {totalPoints.noir} pts de badges</span>
             <span>Blanc — {totalPoints.blanc} pts de badges</span>
@@ -234,7 +234,7 @@ export default function BadgesTab() {
         </div>
 
         {BADGE_CATALOG.map((b) => (
-          <div key={b.key} style={{ border: '1px solid #eee', borderTop: `4px solid ${CLUB_BLUE}`, borderRadius: 16, padding: 14, marginBottom: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+          <div key={b.key} className="blm-card" style={{ marginBottom: 12 }}>
             <div style={{ fontWeight: 'bold' }}>{b.label}</div>
             <div style={{ fontSize: 13, color: '#666', marginBottom: 10 }}>{b.description} · {b.points} pts</div>
 
