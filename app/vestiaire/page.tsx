@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import Link from 'next/link'
+import { Suspense, useEffect, useMemo, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import NavBar from '@/app/components/NavBar'
+import PlayerModal from './PlayerModal'
 
 type Player = {
   id: string
@@ -21,8 +22,13 @@ type ResultRow = { training_id: string; score_noir: number; score_blanc: number 
 const CLUB_BLUE = '#003F6E'
 const CLUB_GOLD = '#C9A227'
 
-export default function VestiairePage() {
+function VestiaireContent() {
   const supabase = createClient()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const openPlayerId = searchParams.get('player')
+  const openEditing = searchParams.get('edit') === '1'
+
   const [me, setMe] = useState<{ id: string } | null>(null)
   const [players, setPlayers] = useState<Player[]>([])
   const [attendance, setAttendance] = useState<AttendanceRow[]>([])
@@ -108,6 +114,14 @@ export default function VestiairePage() {
     return list
   }, [players, teamFilter, positionFilter, search, me])
 
+  function openPlayer(id: string, edit?: boolean) {
+    router.push(`/vestiaire?player=${id}${edit ? '&edit=1' : ''}`, { scroll: false })
+  }
+
+  function closeModal() {
+    router.push('/vestiaire', { scroll: false })
+  }
+
   if (loading) return <p style={{ padding: 40 }}>Chargement...</p>
 
   return (
@@ -185,7 +199,10 @@ export default function VestiairePage() {
                   </span>
                 </div>
 
-                <div style={{ fontWeight: 'bold', fontSize: 16, display: 'flex', alignItems: 'center', gap: 6, marginTop: 12 }}>
+                <div
+                  style={{ fontWeight: 'bold', fontSize: 16, display: 'flex', alignItems: 'center', gap: 6, marginTop: 12, cursor: 'pointer' }}
+                  onClick={() => openPlayer(player.id)}
+                >
                   {player.first_name} {player.last_name}
                   {isMe && (
                     <span style={{ background: '#EEE', color: '#666', fontSize: 11, padding: '2px 8px', borderRadius: 20 }}>
@@ -213,13 +230,19 @@ export default function VestiairePage() {
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'center', gap: 16, fontSize: 13 }}>
-                  <Link href={`/vestiaire/${player.id}`} style={{ color: CLUB_GOLD, textDecoration: 'none', fontWeight: 600 }}>
+                  <button
+                    onClick={() => openPlayer(player.id)}
+                    style={{ color: CLUB_GOLD, background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontWeight: 600 }}
+                  >
                     {isMe ? 'Voir ma fiche' : 'Voir sa fiche'}
-                  </Link>
+                  </button>
                   {isMe && (
-                    <Link href={`/vestiaire/${player.id}?edit=1`} style={{ color: CLUB_GOLD, textDecoration: 'none', fontWeight: 600 }}>
+                    <button
+                      onClick={() => openPlayer(player.id, true)}
+                      style={{ color: CLUB_GOLD, background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontWeight: 600 }}
+                    >
                       ✏️ Modifier ma fiche
-                    </Link>
+                    </button>
                   )}
                 </div>
               </div>
@@ -229,6 +252,18 @@ export default function VestiairePage() {
 
         {filtered.length === 0 && <p style={{ marginTop: 24, color: '#666' }}>Aucun joueur ne correspond à ces critères.</p>}
       </div>
+
+      {openPlayerId && (
+        <PlayerModal key={openPlayerId} playerId={openPlayerId} initialEditing={openEditing} onClose={closeModal} />
+      )}
     </div>
+  )
+}
+
+export default function VestiairePage() {
+  return (
+    <Suspense fallback={<div><p style={{ padding: 40 }}>Chargement...</p></div>}>
+      <VestiaireContent />
+    </Suspense>
   )
 }
