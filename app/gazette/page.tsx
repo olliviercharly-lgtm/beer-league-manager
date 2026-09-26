@@ -6,7 +6,7 @@ import NavBar from '@/app/components/NavBar'
 
 const CLUB_BLUE = '#003F6E'
 
-type Player = { id: string; first_name: string; last_name: string; team: string; is_admin?: boolean; role?: string }
+type Player = { id: string; first_name: string; last_name: string; team: string; role?: string }
 type Training = { id: string; date_time: string; location: string }
 type Article = {
   id: string
@@ -53,7 +53,7 @@ export default function GazettePage() {
     if (user) {
       const { data } = await supabase
         .from('players')
-        .select('id, first_name, last_name, team, is_admin, role')
+        .select('id, first_name, last_name, team, role')
         .eq('auth_user_id', user.id)
         .single()
       setMe(data)
@@ -361,7 +361,7 @@ export default function GazettePage() {
           const lines = article.body.split('\n').filter(Boolean)
           const isExpanded = expandedIds.includes(article.id)
           const visibleLines = isExpanded ? lines : lines.slice(0, 10)
-          const canDelete = me && (me.id === article.author_id || me.is_admin || me.role === 'admin')
+          const canDelete = me && (me.id === article.author_id || me.role === 'admin' || me.role === 'super_admin')
 
           return (
             <div key={article.id} className="blm-card" style={{ marginBottom: 16 }}>
