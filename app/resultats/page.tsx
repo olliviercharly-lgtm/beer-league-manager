@@ -29,6 +29,9 @@ export default function ResultatsPage() {
   const [activeChallenges, setActiveChallenges] = useState<Challenge[]>([])
   const [checkedNoir, setCheckedNoir] = useState<string[]>([])
   const [checkedBlanc, setCheckedBlanc] = useState<string[]>([])
+  const [editingResultId, setEditingResultId] = useState<string | null>(null)
+  const [editScoreNoir, setEditScoreNoir] = useState('')
+  const [editScoreBlanc, setEditScoreBlanc] = useState('')
 
   async function loadAll() {
     const { data: { user } } = await supabase.auth.getUser()
@@ -183,6 +186,39 @@ export default function ResultatsPage() {
     loadAll()
   }
 
+  function handleStartEdit(result: Result) {
+    setEditingResultId(result.id)
+    setEditScoreNoir(String(result.score_noir))
+    setEditScoreBlanc(String(result.score_blanc))
+  }
+
+  function handleCancelEdit() {
+    setEditingResultId(null)
+    setEditScoreNoir('')
+    setEditScoreBlanc('')
+  }
+
+  async function handleSaveEdit(id: string) {
+    await supabase
+      .from('results')
+      .update({
+        score_noir: Number(editScoreNoir) || 0,
+        score_blanc: Number(editScoreBlanc) || 0,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+    setEditingResultId(null)
+    loadAll()
+  }
+
+  async function handleDeleteResult(id: string) {
+    if (!confirm('Supprimer ce résultat ? Cette action est irréversible.')) return
+    await supabase.from('result_challenges').delete().eq('result_id', id)
+    await supabase.from('highlights').delete().eq('result_id', id)
+    await supabase.from('results').delete().eq('id', id)
+    loadAll()
+  }
+
   if (loading) return <p style={{ padding: 40 }}>Chargement...</p>
 
   const formeColor = (r: string) => (r === 'V' ? '#2E7D5B' : r === 'D' ? '#B23A2E' : '#999')
@@ -325,18 +361,76 @@ export default function ResultatsPage() {
 
             return (
               <div key={training.id} className="blm-card" style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>
-                  {new Date(training.date_time).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} · {training.location}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>
+                    {new Date(training.date_time).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} · {training.location}
+                  </div>
+                  {isAdmin && editingResultId !== result.id && (
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      <button
+                        onClick={() => handleStartEdit(result)}
+                        style={{ background: 'none', border: 'none', color: CLUB_BLUE, cursor: 'pointer', fontSize: 12, padding: 0 }}
+                      >
+                        ✏️ Modifier
+                      </button>
+                      <button
+                        onClick={() => handleDeleteResult(result.id)}
+                        style={{ background: 'none', border: 'none', color: '#B23A2E', cursor: 'pointer', fontSize: 12, padding: 0 }}
+                      >
+                        🗑️ Supprimer
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                  <span style={{ background: '#111', color: '#fff', borderRadius: 8, padding: '6px 14px', fontWeight: 'bold', fontSize: 18 }}>
-                    {result.score_noir}
-                  </span>
-                  <span style={{ color: '#999' }}>-</span>
-                  <span style={{ background: '#fff', color: '#111', border: '1px solid #111', borderRadius: 8, padding: '6px 14px', fontWeight: 'bold', fontSize: 18 }}>
-                    {result.score_blanc}
-                  </span>
-                </div>
+
+                {editingResultId === result.id ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <label>Score Noir
+                        <input
+                          type="number"
+                          value={editScoreNoir}
+                          onChange={(e) => setEditScoreNoir(e.target.value)}
+                          style={{ width: 60, marginLeft: 8, padding: 8, border: '1px solid #ccc', borderRadius: 6 }}
+                        />
+                      </label>
+                      <label>Score Blanc
+                        <input
+                          type="number"
+                          value={editScoreBlanc}
+                          onChange={(e) => setEditScoreBlanc(e.target.value)}
+                          style={{ width: 60, marginLeft: 8, padding: 8, border: '1px solid #ccc', borderRadius: 6 }}
+                        />
+                      </label>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        onClick={handleCancelEdit}
+                        style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #ddd', background: '#fff', cursor: 'pointer' }}
+                      >
+                        Annuler
+                      </button>
+                      <button
+                        onClick={() => handleSaveEdit(result.id)}
+                        className="blm-btn-primary"
+                        style={{ padding: '6px 14px' }}
+                      >
+                        Enregistrer
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                    <span style={{ background: '#111', color: '#fff', borderRadius: 8, padding: '6px 14px', fontWeight: 'bold', fontSize: 18 }}>
+                      {result.score_noir}
+                    </span>
+                    <span style={{ color: '#999' }}>-</span>
+                    <span style={{ background: '#fff', color: '#111', border: '1px solid #111', borderRadius: 8, padding: '6px 14px', fontWeight: 'bold', fontSize: 18 }}>
+                      {result.score_blanc}
+                    </span>
+                  </div>
+                )}
+
                 {matchHighlights.length > 0 && (
                   <ul style={{ margin: 0, paddingLeft: 20, fontSize: 14, color: '#333' }}>
                     {matchHighlights.map((h) => <li key={h.id}>{h.text}</li>)}
