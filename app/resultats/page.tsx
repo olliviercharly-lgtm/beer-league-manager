@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import NavBar from '@/app/components/NavBar'
+import MatchModal from './MatchModal'
 
 const CLUB_BLUE = '#003F6E'
 
@@ -10,7 +11,7 @@ type Player = { id: string; role: string }
 type Training = { id: string; date_time: string; location: string }
 type Result = { id: string; training_id: string; score_noir: number; score_blanc: number }
 type Highlight = { id: string; result_id: string; text: string; position: number }
-type Challenge = { id: string; title: string; points: number; status: string }
+type Challenge = { id: string; icon: string; title: string; description: string; points: number; status: string }
 type ResultChallenge = { id: string; result_id: string; challenge_id: string; team: string }
 
 export default function ResultatsPage() {
@@ -19,22 +20,10 @@ export default function ResultatsPage() {
   const [pastTrainings, setPastTrainings] = useState<Training[]>([])
   const [results, setResults] = useState<Result[]>([])
   const [highlights, setHighlights] = useState<Highlight[]>([])
-  const [loading, setLoading] = useState(true)
-
-  const [selectedTrainingId, setSelectedTrainingId] = useState('')
-  const [scoreNoir, setScoreNoir] = useState('')
-  const [scoreBlanc, setScoreBlanc] = useState('')
-  const [highlightInputs, setHighlightInputs] = useState<string[]>([''])
-  const [saving, setSaving] = useState(false)
-  const [formError, setFormError] = useState('')
   const [challenges, setChallenges] = useState<Challenge[]>([])
   const [resultChallenges, setResultChallenges] = useState<ResultChallenge[]>([])
-  const [checkedNoir, setCheckedNoir] = useState<string[]>([])
-  const [checkedBlanc, setCheckedBlanc] = useState<string[]>([])
-  const [editingResultId, setEditingResultId] = useState<string | null>(null)
-  const [editScoreNoir, setEditScoreNoir] = useState('')
-  const [editScoreBlanc, setEditScoreBlanc] = useState('')
-  const [editHighlights, setEditHighlights] = useState<string[]>([''])
+  const [loading, setLoading] = useState(true)
+  const [activeTrainingId, setActiveTrainingId] = useState<string | null>(null)
 
   async function loadAll() {
     const { data: { user } } = await supabase.auth.getUser()
@@ -83,11 +72,12 @@ export default function ResultatsPage() {
     } else {
       setResults([])
       setHighlights([])
+      setResultChallenges([])
     }
 
     const { data: challengesData } = await supabase
       .from('challenges')
-      .select('id, title, points, status')
+      .select('id, icon, title, description, points, status')
     setChallenges(challengesData || [])
 
     setLoading(false)
@@ -104,7 +94,6 @@ export default function ResultatsPage() {
   )
 
   const isAdmin = me?.role === 'admin' || me?.role === 'super_admin'
-  const activeChallenges = useMemo(() => challenges.filter((c) => c.status === 'active'), [challenges])
 
   const seasonStats = useMemo(() => {
     let winsNoir = 0
@@ -137,110 +126,6 @@ export default function ResultatsPage() {
     return { winsNoir, winsBlanc, goalsNoir, goalsBlanc, formeNoir, formeBlanc, pctNoir }
   }, [results, pastTrainings])
 
-  function handleAddHighlightField() {
-    setHighlightInputs([...highlightInputs, ''])
-  }
-
-  async function handleSubmitResult(e: React.FormEvent) {
-    e.preventDefault()
-    if (!selectedTrainingId) return
-    setSaving(true)
-    setFormError('')
-
-    const { data: newResult, error } = await supabase
-      .from('results')
-      .insert({
-        training_id: selectedTrainingId,
-        score_noir: Number(scoreNoir) || 0,
-        score_blanc: Number(scoreBlanc) || 0,
-        updated_at: new Date().toISOString(),
-      })
-      .select()
-      .single()
-
-    if (error) {
-      setFormError(error.message)
-      setSaving(false)
-      return
-    }
-
-    const validHighlights = highlightInputs.filter((h) => h.trim() !== '')
-    if (validHighlights.length > 0 && newResult) {
-      const { error: highlightsError } = await supabase.from('highlights').insert(
-        validHighlights.map((text, i) => ({
-          result_id: newResult.id,
-          text,
-          position: i,
-        }))
-      )
-      if (highlightsError) setFormError(highlightsError.message)
-    }
-
-    if (newResult) {
-      const rows = [
-        ...checkedNoir.map((challenge_id) => ({ result_id: newResult.id, challenge_id, team: 'noir' })),
-        ...checkedBlanc.map((challenge_id) => ({ result_id: newResult.id, challenge_id, team: 'blanc' })),
-      ]
-      if (rows.length > 0) {
-        await supabase.from('result_challenges').insert(rows)
-      }
-    }
-
-    setCheckedNoir([])
-    setCheckedBlanc([])
-    setSelectedTrainingId('')
-    setScoreNoir('')
-    setScoreBlanc('')
-    setHighlightInputs([''])
-    setSaving(false)
-    loadAll()
-  }
-
-  function handleStartEdit(result: Result) {
-    setEditingResultId(result.id)
-    setEditScoreNoir(String(result.score_noir))
-    setEditScoreBlanc(String(result.score_blanc))
-    const existing = highlights.filter((h) => h.result_id === result.id).map((h) => h.text)
-    setEditHighlights(existing.length > 0 ? existing : [''])
-  }
-
-  function handleCancelEdit() {
-    setEditingResultId(null)
-    setEditScoreNoir('')
-    setEditScoreBlanc('')
-    setEditHighlights([''])
-  }
-
-  function handleAddEditHighlightField() {
-    setEditHighlights([...editHighlights, ''])
-  }
-
-  function handleRemoveEditHighlightField(i: number) {
-    setEditHighlights(editHighlights.filter((_, idx) => idx !== i))
-  }
-
-  async function handleSaveEdit(id: string) {
-    await supabase
-      .from('results')
-      .update({
-        score_noir: Number(editScoreNoir) || 0,
-        score_blanc: Number(editScoreBlanc) || 0,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', id)
-
-    await supabase.from('highlights').delete().eq('result_id', id)
-    const validHighlights = editHighlights.filter((h) => h.trim() !== '')
-    if (validHighlights.length > 0) {
-      await supabase.from('highlights').insert(
-        validHighlights.map((text, i) => ({ result_id: id, text, position: i }))
-      )
-    }
-
-    setEditingResultId(null)
-    loadAll()
-  }
-
   async function handleDeleteResult(id: string) {
     if (!confirm('Supprimer ce résultat ? Cette action est irréversible.')) return
     await supabase.from('result_challenges').delete().eq('result_id', id)
@@ -252,6 +137,11 @@ export default function ResultatsPage() {
   if (loading) return <p style={{ padding: 40 }}>Chargement...</p>
 
   const formeColor = (r: string) => (r === 'V' ? '#2E7D5B' : r === 'D' ? '#B23A2E' : '#999')
+
+  const activeTraining = pastTrainings.find((t) => t.id === activeTrainingId) || null
+  const activeResult = activeTraining ? results.find((r) => r.training_id === activeTraining.id) || null : null
+  const activeHighlights = activeResult ? highlights.filter((h) => h.result_id === activeResult.id) : []
+  const activeResultChallenges = activeResult ? resultChallenges.filter((rc) => rc.result_id === activeResult.id) : []
 
   return (
     <div>
@@ -287,98 +177,22 @@ export default function ResultatsPage() {
         )}
 
         {isAdmin && trainingsWithoutResult.length > 0 && (
-          <details className="blm-card" style={{ marginBottom: 24 }}>
-            <summary style={{ cursor: 'pointer', fontWeight: 'bold' }}>Ajouter un résultat</summary>
-            <form onSubmit={handleSubmitResult} style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
-              <select
-                value={selectedTrainingId}
-                onChange={(e) => setSelectedTrainingId(e.target.value)}
-                required
-                style={{ padding: 8, border: '1px solid #ccc', borderRadius: 6 }}
-              >
-                <option value="">Choisir un entraînement passé...</option>
-                {trainingsWithoutResult.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {new Date(t.date_time).toLocaleDateString('fr-FR')} — {t.location}
-                  </option>
-                ))}
-              </select>
-
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <label>Score Noir
-                  <input type="number" value={scoreNoir} onChange={(e) => setScoreNoir(e.target.value)} required style={{ width: 60, marginLeft: 8, padding: 8, border: '1px solid #ccc', borderRadius: 6 }} />
-                </label>
-                <label>Score Blanc
-                  <input type="number" value={scoreBlanc} onChange={(e) => setScoreBlanc(e.target.value)} required style={{ width: 60, marginLeft: 8, padding: 8, border: '1px solid #ccc', borderRadius: 6 }} />
-                </label>
-              </div>
-
-              <div>
-                <span style={{ fontSize: 13, color: '#555' }}>Faits saillants</span>
-                {highlightInputs.map((h, i) => (
-                  <input
-                    key={i}
-                    placeholder={`Fait saillant ${i + 1}`}
-                    value={h}
-                    onChange={(e) => {
-                      const copy = [...highlightInputs]
-                      copy[i] = e.target.value
-                      setHighlightInputs(copy)
-                    }}
-                    style={{ display: 'block', width: '100%', padding: 8, border: '1px solid #ccc', borderRadius: 6, marginTop: 6 }}
-                  />
-                ))}
-                <button type="button" onClick={handleAddHighlightField} style={{ marginTop: 8, padding: '4px 10px', borderRadius: 6, border: '1px solid #ccc', background: '#fff', cursor: 'pointer', fontSize: 13 }}>
-                  + Ajouter un fait saillant
+          <div style={{ marginBottom: 24 }}>
+            {trainingsWithoutResult.map((t) => (
+              <div key={t.id} className="blm-card" style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 13, color: '#666', marginBottom: 10 }}>
+                  {new Date(t.date_time).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} · {t.location}
+                </div>
+                <button
+                  onClick={() => setActiveTrainingId(t.id)}
+                  className="blm-btn-primary"
+                  style={{ width: '100%' }}
+                >
+                  🏆 Feuille de Match &amp; Résultats
                 </button>
               </div>
-
-              {activeChallenges.length > 0 && (
-                <div style={{ display: 'flex', gap: 16 }}>
-                  <div style={{ flex: 1 }}>
-                    <span style={{ fontSize: 13, fontWeight: 'bold' }}>Défis validés — Noir</span>
-                    {activeChallenges.map((c) => (
-                      <label key={c.id} style={{ display: 'block', fontSize: 13, marginTop: 4 }}>
-                        <input
-                          type="checkbox"
-                          checked={checkedNoir.includes(c.id)}
-                          onChange={(e) =>
-                            setCheckedNoir(
-                              e.target.checked ? [...checkedNoir, c.id] : checkedNoir.filter((id) => id !== c.id)
-                            )
-                          }
-                        />{' '}
-                        {c.title} ({c.points} pts)
-                      </label>
-                    ))}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <span style={{ fontSize: 13, fontWeight: 'bold' }}>Défis validés — Blanc</span>
-                    {activeChallenges.map((c) => (
-                      <label key={c.id} style={{ display: 'block', fontSize: 13, marginTop: 4 }}>
-                        <input
-                          type="checkbox"
-                          checked={checkedBlanc.includes(c.id)}
-                          onChange={(e) =>
-                            setCheckedBlanc(
-                              e.target.checked ? [...checkedBlanc, c.id] : checkedBlanc.filter((id) => id !== c.id)
-                            )
-                          }
-                        />{' '}
-                        {c.title} ({c.points} pts)
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {formError && <p style={{ color: '#B23A2E', fontSize: 13 }}>{formError}</p>}
-
-              <button type="submit" disabled={saving} className="blm-btn-primary" style={{ alignSelf: 'flex-start' }}>
-                {saving ? 'Enregistrement...' : 'Enregistrer le résultat'}
-              </button>
-            </form>
-          </details>
+            ))}
+          </div>
         )}
 
         {results.length === 0 && <p>Aucun résultat enregistré pour le moment.</p>}
@@ -392,108 +206,19 @@ export default function ResultatsPage() {
 
             return (
               <div key={training.id} className="blm-card" style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>
-                    {new Date(training.date_time).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} · {training.location}
-                  </div>
-                  {isAdmin && editingResultId !== result.id && (
-                    <div style={{ display: 'flex', gap: 10 }}>
-                      <button
-                        onClick={() => handleStartEdit(result)}
-                        style={{ background: 'none', border: 'none', color: CLUB_BLUE, cursor: 'pointer', fontSize: 12, padding: 0 }}
-                      >
-                        ✏️ Modifier
-                      </button>
-                      <button
-                        onClick={() => handleDeleteResult(result.id)}
-                        style={{ background: 'none', border: 'none', color: '#B23A2E', cursor: 'pointer', fontSize: 12, padding: 0 }}
-                      >
-                        🗑️ Supprimer
-                      </button>
-                    </div>
-                  )}
+                <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>
+                  {new Date(training.date_time).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} · {training.location}
                 </div>
 
-                {editingResultId === result.id ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <label>Score Noir
-                        <input
-                          type="number"
-                          value={editScoreNoir}
-                          onChange={(e) => setEditScoreNoir(e.target.value)}
-                          style={{ width: 60, marginLeft: 8, padding: 8, border: '1px solid #ccc', borderRadius: 6 }}
-                        />
-                      </label>
-                      <label>Score Blanc
-                        <input
-                          type="number"
-                          value={editScoreBlanc}
-                          onChange={(e) => setEditScoreBlanc(e.target.value)}
-                          style={{ width: 60, marginLeft: 8, padding: 8, border: '1px solid #ccc', borderRadius: 6 }}
-                        />
-                      </label>
-                    </div>
-
-                    <div>
-                      <span style={{ fontSize: 13, color: '#555' }}>Faits saillants</span>
-                      {editHighlights.map((h, i) => (
-                        <div key={i} style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-                          <input
-                            placeholder={`Fait saillant ${i + 1}`}
-                            value={h}
-                            onChange={(e) => {
-                              const copy = [...editHighlights]
-                              copy[i] = e.target.value
-                              setEditHighlights(copy)
-                            }}
-                            style={{ flex: 1, padding: 8, border: '1px solid #ccc', borderRadius: 6 }}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveEditHighlightField(i)}
-                            style={{ padding: '0 10px', borderRadius: 6, border: '1px solid #ddd', background: '#fff', cursor: 'pointer', color: '#B23A2E' }}
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={handleAddEditHighlightField}
-                        style={{ marginTop: 8, padding: '4px 10px', borderRadius: 6, border: '1px solid #ccc', background: '#fff', cursor: 'pointer', fontSize: 13 }}
-                      >
-                        + Ajouter un fait saillant
-                      </button>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button
-                        onClick={handleCancelEdit}
-                        style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #ddd', background: '#fff', cursor: 'pointer' }}
-                      >
-                        Annuler
-                      </button>
-                      <button
-                        onClick={() => handleSaveEdit(result.id)}
-                        className="blm-btn-primary"
-                        style={{ padding: '6px 14px' }}
-                      >
-                        Enregistrer
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                    <span style={{ background: '#111', color: '#fff', borderRadius: 8, padding: '6px 14px', fontWeight: 'bold', fontSize: 18 }}>
-                      {result.score_noir}
-                    </span>
-                    <span style={{ color: '#999' }}>-</span>
-                    <span style={{ background: '#fff', color: '#111', border: '1px solid #111', borderRadius: 8, padding: '6px 14px', fontWeight: 'bold', fontSize: 18 }}>
-                      {result.score_blanc}
-                    </span>
-                  </div>
-                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                  <span style={{ background: '#111', color: '#fff', borderRadius: 8, padding: '6px 14px', fontWeight: 'bold', fontSize: 18 }}>
+                    {result.score_noir}
+                  </span>
+                  <span style={{ color: '#999' }}>-</span>
+                  <span style={{ background: '#fff', color: '#111', border: '1px solid #111', borderRadius: 8, padding: '6px 14px', fontWeight: 'bold', fontSize: 18 }}>
+                    {result.score_blanc}
+                  </span>
+                </div>
 
                 {matchHighlights.length > 0 && (
                   <div style={{ fontSize: 15, color: '#1A1A1A', lineHeight: 1.6, marginBottom: matchChallenges.length > 0 ? 12 : 0 }}>
@@ -504,7 +229,7 @@ export default function ResultatsPage() {
                 )}
 
                 {matchChallenges.length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: isAdmin ? 12 : 0 }}>
                     {matchChallenges.map((rc) => {
                       const challenge = challenges.find((c) => c.id === rc.challenge_id)
                       if (!challenge) return null
@@ -519,10 +244,40 @@ export default function ResultatsPage() {
                     })}
                   </div>
                 )}
+
+                {isAdmin && (
+                  <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+                    <button
+                      onClick={() => setActiveTrainingId(training.id)}
+                      className="blm-pill"
+                      style={{ flex: 1, justifyContent: 'center' }}
+                    >
+                      🏆 Feuille de Match &amp; Résultats
+                    </button>
+                    <button
+                      onClick={() => handleDeleteResult(result.id)}
+                      style={{ background: 'none', border: 'none', color: '#B23A2E', cursor: 'pointer', fontSize: 12 }}
+                    >
+                      🗑️ Supprimer
+                    </button>
+                  </div>
+                )}
               </div>
             )
           })}
       </div>
+
+      {activeTraining && (
+        <MatchModal
+          training={activeTraining}
+          result={activeResult}
+          highlights={activeHighlights}
+          resultChallenges={activeResultChallenges}
+          challenges={challenges}
+          onClose={() => setActiveTrainingId(null)}
+          onSaved={loadAll}
+        />
+      )}
     </div>
   )
 }
