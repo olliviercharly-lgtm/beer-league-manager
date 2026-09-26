@@ -93,7 +93,7 @@ ${instructions ? `Consignes du joueur qui demande l'article (n'affiche jamais ce
 {"title": "titre accrocheur", "body": "corps de l'article en plusieurs paragraphes séparés par des sauts de ligne"}`
 
   const model = genAI.getGenerativeModel({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-flash-latest',
     generationConfig: { responseMimeType: 'application/json' },
   })
 
