@@ -10,7 +10,8 @@ type Player = { id: string; role: string }
 type Training = { id: string; date_time: string; location: string }
 type Result = { id: string; training_id: string; score_noir: number; score_blanc: number }
 type Highlight = { id: string; result_id: string; text: string; position: number }
-type Challenge = { id: string; title: string; points: number }
+type Challenge = { id: string; title: string; points: number; status: string }
+type ResultChallenge = { id: string; result_id: string; challenge_id: string; team: string }
 
 export default function ResultatsPage() {
   const supabase = createClient()
@@ -26,12 +27,14 @@ export default function ResultatsPage() {
   const [highlightInputs, setHighlightInputs] = useState<string[]>([''])
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
-  const [activeChallenges, setActiveChallenges] = useState<Challenge[]>([])
+  const [challenges, setChallenges] = useState<Challenge[]>([])
+  const [resultChallenges, setResultChallenges] = useState<ResultChallenge[]>([])
   const [checkedNoir, setCheckedNoir] = useState<string[]>([])
   const [checkedBlanc, setCheckedBlanc] = useState<string[]>([])
   const [editingResultId, setEditingResultId] = useState<string | null>(null)
   const [editScoreNoir, setEditScoreNoir] = useState('')
   const [editScoreBlanc, setEditScoreBlanc] = useState('')
+  const [editHighlights, setEditHighlights] = useState<string[]>([''])
 
   async function loadAll() {
     const { data: { user } } = await supabase.auth.getUser()
@@ -67,8 +70,15 @@ export default function ResultatsPage() {
           .in('result_id', resultIds)
           .order('position', { ascending: true })
         setHighlights(highlightsData || [])
+
+        const { data: resultChallengesData } = await supabase
+          .from('result_challenges')
+          .select('id, result_id, challenge_id, team')
+          .in('result_id', resultIds)
+        setResultChallenges(resultChallengesData || [])
       } else {
         setHighlights([])
+        setResultChallenges([])
       }
     } else {
       setResults([])
@@ -77,9 +87,8 @@ export default function ResultatsPage() {
 
     const { data: challengesData } = await supabase
       .from('challenges')
-      .select('id, title, points')
-      .eq('status', 'active')
-    setActiveChallenges(challengesData || [])
+      .select('id, title, points, status')
+    setChallenges(challengesData || [])
 
     setLoading(false)
   }
@@ -95,6 +104,7 @@ export default function ResultatsPage() {
   )
 
   const isAdmin = me?.role === 'admin' || me?.role === 'super_admin'
+  const activeChallenges = useMemo(() => challenges.filter((c) => c.status === 'active'), [challenges])
 
   const seasonStats = useMemo(() => {
     let winsNoir = 0
@@ -190,12 +200,23 @@ export default function ResultatsPage() {
     setEditingResultId(result.id)
     setEditScoreNoir(String(result.score_noir))
     setEditScoreBlanc(String(result.score_blanc))
+    const existing = highlights.filter((h) => h.result_id === result.id).map((h) => h.text)
+    setEditHighlights(existing.length > 0 ? existing : [''])
   }
 
   function handleCancelEdit() {
     setEditingResultId(null)
     setEditScoreNoir('')
     setEditScoreBlanc('')
+    setEditHighlights([''])
+  }
+
+  function handleAddEditHighlightField() {
+    setEditHighlights([...editHighlights, ''])
+  }
+
+  function handleRemoveEditHighlightField(i: number) {
+    setEditHighlights(editHighlights.filter((_, idx) => idx !== i))
   }
 
   async function handleSaveEdit(id: string) {
@@ -207,6 +228,15 @@ export default function ResultatsPage() {
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)
+
+    await supabase.from('highlights').delete().eq('result_id', id)
+    const validHighlights = editHighlights.filter((h) => h.trim() !== '')
+    if (validHighlights.length > 0) {
+      await supabase.from('highlights').insert(
+        validHighlights.map((text, i) => ({ result_id: id, text, position: i }))
+      )
+    }
+
     setEditingResultId(null)
     loadAll()
   }
@@ -358,6 +388,7 @@ export default function ResultatsPage() {
           .map((training) => {
             const result = results.find((r) => r.training_id === training.id)!
             const matchHighlights = highlights.filter((h) => h.result_id === result.id)
+            const matchChallenges = resultChallenges.filter((rc) => rc.result_id === result.id)
 
             return (
               <div key={training.id} className="blm-card" style={{ marginBottom: 16 }}>
@@ -403,6 +434,39 @@ export default function ResultatsPage() {
                         />
                       </label>
                     </div>
+
+                    <div>
+                      <span style={{ fontSize: 13, color: '#555' }}>Faits saillants</span>
+                      {editHighlights.map((h, i) => (
+                        <div key={i} style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                          <input
+                            placeholder={`Fait saillant ${i + 1}`}
+                            value={h}
+                            onChange={(e) => {
+                              const copy = [...editHighlights]
+                              copy[i] = e.target.value
+                              setEditHighlights(copy)
+                            }}
+                            style={{ flex: 1, padding: 8, border: '1px solid #ccc', borderRadius: 6 }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveEditHighlightField(i)}
+                            style={{ padding: '0 10px', borderRadius: 6, border: '1px solid #ddd', background: '#fff', cursor: 'pointer', color: '#B23A2E' }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={handleAddEditHighlightField}
+                        style={{ marginTop: 8, padding: '4px 10px', borderRadius: 6, border: '1px solid #ccc', background: '#fff', cursor: 'pointer', fontSize: 13 }}
+                      >
+                        + Ajouter un fait saillant
+                      </button>
+                    </div>
+
                     <div style={{ display: 'flex', gap: 8 }}>
                       <button
                         onClick={handleCancelEdit}
@@ -432,9 +496,28 @@ export default function ResultatsPage() {
                 )}
 
                 {matchHighlights.length > 0 && (
-                  <ul style={{ margin: 0, paddingLeft: 20, fontSize: 14, color: '#333' }}>
-                    {matchHighlights.map((h) => <li key={h.id}>{h.text}</li>)}
-                  </ul>
+                  <div style={{ fontSize: 15, color: '#1A1A1A', lineHeight: 1.6, marginBottom: matchChallenges.length > 0 ? 12 : 0 }}>
+                    {matchHighlights.map((h) => (
+                      <div key={h.id} style={{ marginBottom: 8 }}>• {h.text}</div>
+                    ))}
+                  </div>
+                )}
+
+                {matchChallenges.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {matchChallenges.map((rc) => {
+                      const challenge = challenges.find((c) => c.id === rc.challenge_id)
+                      if (!challenge) return null
+                      return (
+                        <span
+                          key={rc.id}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 999, border: '1px solid #ccc', fontSize: 13, color: '#333' }}
+                        >
+                          ✓ {challenge.title} <em style={{ fontStyle: 'italic', color: '#777' }}>({rc.team === 'noir' ? 'Noir' : 'Blanc'})</em>
+                        </span>
+                      )
+                    })}
+                  </div>
                 )}
               </div>
             )
