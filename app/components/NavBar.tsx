@@ -20,6 +20,7 @@ export default function NavBar() {
       <Link href="/vestiaire" style={{ color: '#fff', textDecoration: 'none' }}>Vestiaire</Link>
       <Link href="/resultats" style={{ color: '#fff', textDecoration: 'none' }}>Résultats</Link>
       <Link href="/defis" style={{ color: '#fff', textDecoration: 'none' }}>Défis</Link>
+      <Link href="/gazette" style={{ color: '#fff', textDecoration: 'none' }}>Gazette</Link>
       <button
         onClick={handleLogout}
         style={{ marginLeft: 'auto', background: 'none', border: '1px solid #555', color: '#fff', padding: '6px 12px', borderRadius: 6, cursor: 'pointer' }}
