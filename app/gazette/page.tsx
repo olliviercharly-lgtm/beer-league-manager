@@ -6,7 +6,7 @@ import NavBar from '@/app/components/NavBar'
 
 const CLUB_BLUE = '#003F6E'
 
-type Player = { id: string; first_name: string; last_name: string; team: string; role?: string }
+type Player = { id: string; first_name: string; last_name: string; team: string; role?: string; league_id?: string }
 type Training = { id: string; date_time: string; location: string }
 type Article = {
   id: string
@@ -53,7 +53,7 @@ export default function GazettePage() {
     if (user) {
       const { data } = await supabase
         .from('players')
-        .select('id, first_name, last_name, team, role')
+        .select('id, first_name, last_name, team, role, league_id')
         .eq('auth_user_id', user.id)
         .single()
       setMe(data)
@@ -187,6 +187,7 @@ export default function GazettePage() {
         title: draft.title,
         body: draft.body,
         author_id: me.id,
+        league_id: me.league_id,
       })
       .select()
       .single()
