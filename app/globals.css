@@ -1,8 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --club-blue: #003F6E;
+  --club-gold: #C9A227;
+  --background: #F5F5F5;
+  --card-bg: #ffffff;
+  --foreground: #1A1A1A;
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --card-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  color-scheme: light;
 }
 
 @theme inline {
@@ -12,15 +19,51 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* Thème clair forcé : on ne suit pas prefers-color-scheme */
 
-body {
+html, body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  min-height: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.blm-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--card-shadow);
+  border-top: 4px solid var(--club-blue);
+  padding: 20px;
+}
+
+.blm-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--club-blue);
+  background: #fff;
+  color: var(--club-blue);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.blm-pill-active {
+  background: var(--club-blue);
+  color: #fff;
+}
+
+.blm-btn-primary {
+  background: var(--club-blue);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-weight: bold;
+  cursor: pointer;
 }
