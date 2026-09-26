@@ -179,6 +179,7 @@ export default function GazettePage() {
   async function handlePublish() {
     if (!draft || !me) return
     setPublishing(true)
+    setGenError('')
     const { data, error } = await supabase
       .from('articles')
       .insert({
@@ -190,7 +191,11 @@ export default function GazettePage() {
       .select()
       .single()
     setPublishing(false)
-    if (!error && data) {
+    if (error) {
+      setGenError(`Erreur publication : ${error.message}`)
+      return
+    }
+    if (data) {
       setArticles((prev) => [data, ...prev])
       setDraft(null)
       setShowForm(false)
