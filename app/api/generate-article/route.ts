@@ -92,17 +92,31 @@ ${instructions ? `Consignes du joueur qui demande l'article (n'affiche jamais ce
 Écris un article complet (plusieurs paragraphes, pas un simple résumé de 2 lignes), drôle, avec une vraie accroche. Réponds uniquement au format JSON suivant, sans aucun texte autour :
 {"title": "titre accrocheur", "body": "corps de l'article en plusieurs paragraphes séparés par des sauts de ligne"}`
 
-  try {
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-flash-latest',
-      generationConfig: { responseMimeType: 'application/json' },
-    })
-    const result = await model.generateContent(prompt)
-    const text = result.response.text()
-    const parsed = JSON.parse(text)
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-flash-latest',
+    generationConfig: { responseMimeType: 'application/json' },
+  })
 
-    return NextResponse.json({ title: parsed.title, body: parsed.body })
-  } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : 'Erreur de génération.' }, { status: 500 })
+  let lastErr: unknown = null
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const result = await model.generateContent(prompt)
+      const text = result.response.text()
+      const parsed = JSON.parse(text)
+      return NextResponse.json({ title: parsed.title, body: parsed.body })
+    } catch (err) {
+      lastErr = err
+      const message = err instanceof Error ? err.message : ''
+      if (message.includes('503') || message.includes('overloaded') || message.includes('high demand')) {
+        await new Promise((resolve) => setTimeout(resolve, 1500 * (attempt + 1)))
+        continue
+      }
+      break
+    }
   }
+
+  return NextResponse.json(
+    { error: lastErr instanceof Error ? lastErr.message : 'Erreur de génération.' },
+    { status: 500 }
+  )
 }
