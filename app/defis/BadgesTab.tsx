@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import NavBar from '@/app/components/NavBar'
 
 const CLUB_BLUE = '#003F6E'
 
@@ -21,7 +20,7 @@ type Training = { id: string; date_time: string }
 type ResultChallenge = { id: string; result_id: string; challenge_id: string; team: string }
 type Override = { id: string; badge_key: string; team: string; status: string; points: number | null }
 
-export default function BadgesPage() {
+export default function BadgesTab() {
   const supabase = createClient()
   const [me, setMe] = useState<Player | null>(null)
   const [results, setResults] = useState<Result[]>([])
@@ -222,12 +221,8 @@ export default function BadgesPage() {
   const pctNoir = Math.round((totalPoints.noir / total) * 100)
 
   return (
-    <div>
-      <NavBar />
-      <div style={{ maxWidth: 800, margin: '40px auto', fontFamily: 'sans-serif', padding: '0 16px' }}>
-        <h1 style={{ marginBottom: 24 }}>Badges</h1>
-
-        <div style={{ border: '1px solid #eee', borderTop: `4px solid ${CLUB_BLUE}`, borderRadius: 20, padding: 20, marginBottom: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+    <>
+      <div style={{ border: '1px solid #eee', borderTop: `4px solid ${CLUB_BLUE}`, borderRadius: 20, padding: 20, marginBottom: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 6 }}>
             <span>Noir — {totalPoints.noir} pts de badges</span>
             <span>Blanc — {totalPoints.blanc} pts de badges</span>
@@ -278,7 +273,6 @@ export default function BadgesPage() {
         <p style={{ fontSize: 12, color: '#999', marginTop: 24 }}>
           Buts marqués cette saison — Noir : {computed.totalGoalsNoir} · Blanc : {computed.totalGoalsBlanc}
         </p>
-      </div>
-    </div>
+    </>
   )
 }
