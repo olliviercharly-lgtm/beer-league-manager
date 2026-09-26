@@ -15,12 +15,18 @@ type Player = {
   position: string
 }
 
+type AttendanceRow = { player_id: string; training_id: string; status: string }
+type ResultRow = { training_id: string; score_noir: number; score_blanc: number }
+
 const CLUB_BLUE = '#003F6E'
+const CLUB_GOLD = '#C9A227'
 
 export default function VestiairePage() {
   const supabase = createClient()
   const [me, setMe] = useState<{ id: string } | null>(null)
   const [players, setPlayers] = useState<Player[]>([])
+  const [attendance, setAttendance] = useState<AttendanceRow[]>([])
+  const [results, setResults] = useState<ResultRow[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [teamFilter, setTeamFilter] = useState<'all' | 'noir' | 'blanc'>('all')
@@ -45,11 +51,43 @@ export default function VestiairePage() {
         .order('first_name', { ascending: true })
 
       setPlayers(playersData || [])
+
+      const { data: attendanceData } = await supabase
+        .from('attendance')
+        .select('player_id, training_id, status')
+        .eq('status', 'present')
+      setAttendance(attendanceData || [])
+
+      const { data: resultsData } = await supabase
+        .from('results')
+        .select('training_id, score_noir, score_blanc')
+      setResults(resultsData || [])
+
       setLoading(false)
     }
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load()
   }, [])
+
+  const statsByPlayer = useMemo(() => {
+    const map: Record<string, { matches: number; victoires: number }> = {}
+    const resultsByTraining: Record<string, ResultRow> = {}
+    results.forEach((r) => { resultsByTraining[r.training_id] = r })
+
+    attendance.forEach((a) => {
+      const player = players.find((p) => p.id === a.player_id)
+      if (!player) return
+      const result = resultsByTraining[a.training_id]
+      if (!result) return
+      if (!map[a.player_id]) map[a.player_id] = { matches: 0, victoires: 0 }
+      map[a.player_id].matches += 1
+      const mine = player.team === 'noir' ? result.score_noir : result.score_blanc
+      const other = player.team === 'noir' ? result.score_blanc : result.score_noir
+      if (mine > other) map[a.player_id].victoires += 1
+    })
+
+    return map
+  }, [attendance, results, players])
 
   const filtered = useMemo(() => {
     let list = [...players]
@@ -76,9 +114,9 @@ export default function VestiairePage() {
     <div>
       <NavBar />
       <div style={{ maxWidth: 900, margin: '40px auto', fontFamily: 'sans-serif', padding: '0 16px' }}>
-        <h1 style={{ marginBottom: 24 }}>Vestiaire</h1>
+        <h1 style={{ marginBottom: 24, color: CLUB_BLUE, fontSize: 26 }}>Vestiaire</h1>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginBottom: 24, border: '1px solid #ddd', borderRadius: 16, padding: 12 }}>
+        <div className="blm-card" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginBottom: 24 }}>
           <input
             placeholder="Rechercher un joueur..."
             value={search}
@@ -89,11 +127,7 @@ export default function VestiairePage() {
             <button
               key={t}
               onClick={() => setTeamFilter(t)}
-              style={{
-                padding: '6px 14px', borderRadius: 20, border: `1px solid ${CLUB_BLUE}`, cursor: 'pointer',
-                background: teamFilter === t ? CLUB_BLUE : '#fff',
-                color: teamFilter === t ? '#fff' : CLUB_BLUE,
-              }}
+              className={teamFilter === t ? 'blm-pill-active' : 'blm-pill'}
             >
               {t === 'all' ? 'Toutes équipes' : t === 'noir' ? 'Noir' : 'Blanc'}
             </button>
@@ -102,56 +136,93 @@ export default function VestiairePage() {
             <button
               key={p}
               onClick={() => setPositionFilter(p)}
-              style={{
-                padding: '6px 14px', borderRadius: 20, border: `1px solid ${CLUB_BLUE}`, cursor: 'pointer',
-                background: positionFilter === p ? CLUB_BLUE : '#fff',
-                color: positionFilter === p ? '#fff' : CLUB_BLUE,
-              }}
+              className={positionFilter === p ? 'blm-pill-active' : 'blm-pill'}
             >
               {p === 'all' ? 'Tous postes' : p === 'attaquant' ? 'Attaquant' : p === 'defenseur' ? 'Défenseur' : 'Gardien'}
             </button>
           ))}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
           {filtered.map((player) => {
             const isMe = player.id === me?.id
             const initials = `${player.first_name[0] || ''}${player.last_name[0] || ''}`.toUpperCase()
             const isNoir = player.team === 'noir'
+            const stats = statsByPlayer[player.id] || { matches: 0, victoires: 0 }
+            const ratio = stats.matches > 0 ? Math.round((stats.victoires / stats.matches) * 100) : 0
 
             return (
-              <Link
-                key={player.id}
-                href={`/vestiaire/${player.id}`}
-                style={{
-                  textDecoration: 'none', color: '#111', display: 'block',
-                  border: '1px solid #eee', borderTop: `4px solid ${CLUB_BLUE}`, borderRadius: 20,
-                  padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', background: '#fff', position: 'relative',
-                }}
-              >
-                <div
-                  style={{
-                    width: 48, height: 48, borderRadius: '50%', background: CLUB_BLUE, color: '#fff',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', marginBottom: 12,
-                  }}
-                >
-                  {initials}
+              <div key={player.id} className="blm-card" style={{ position: 'relative' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                  <div style={{ position: 'relative' }}>
+                    <div
+                      style={{
+                        width: 56, height: 56, borderRadius: 14, background: CLUB_BLUE, color: '#fff',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 18,
+                      }}
+                    >
+                      {initials}
+                    </div>
+                    {player.number != null && (
+                      <span
+                        style={{
+                          position: 'absolute', bottom: -8, left: -8, background: CLUB_GOLD, color: '#1A1A1A',
+                          fontSize: 12, fontWeight: 'bold', padding: '2px 8px', borderRadius: 10,
+                        }}
+                      >
+                        #{player.number}
+                      </span>
+                    )}
+                  </div>
+                  <span
+                    style={{
+                      background: isNoir ? '#111' : '#fff', color: isNoir ? '#fff' : '#111',
+                      border: isNoir ? 'none' : '1px solid #111', fontSize: 12, fontWeight: 600,
+                      padding: '4px 12px', borderRadius: 20,
+                    }}
+                  >
+                    {isNoir ? 'Noir' : 'Blanc'}
+                  </span>
                 </div>
-                <span
-                  style={{
-                    position: 'absolute', top: 16, right: 16, width: 14, height: 14, borderRadius: '50%',
-                    background: isNoir ? '#111' : '#fff',
-                    border: '1px solid #111',
-                  }}
-                  title={isNoir ? 'Équipe Noir' : 'Équipe Blanc'}
-                />
-                <div style={{ fontWeight: 'bold' }}>
-                  {player.first_name} {player.last_name} {isMe && <span style={{ color: CLUB_BLUE }}>(Moi)</span>}
+
+                <div style={{ fontWeight: 'bold', fontSize: 16, display: 'flex', alignItems: 'center', gap: 6, marginTop: 12 }}>
+                  {player.first_name} {player.last_name}
+                  {isMe && (
+                    <span style={{ background: '#EEE', color: '#666', fontSize: 11, padding: '2px 8px', borderRadius: 20 }}>
+                      Moi
+                    </span>
+                  )}
                 </div>
-                <div style={{ fontSize: 13, color: '#666' }}>
-                  #{player.number ?? '-'} · {player.position === 'attaquant' ? 'Attaquant' : player.position === 'defenseur' ? 'Défenseur' : 'Gardien'}
+                <div style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>
+                  {player.position === 'attaquant' ? 'Attaquant' : player.position === 'defenseur' ? 'Défenseur' : 'Gardien'}
                 </div>
-              </Link>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #eee', borderBottom: '1px solid #eee', padding: '12px 0', marginBottom: 12 }}>
+                  <div style={{ textAlign: 'center', flex: 1 }}>
+                    <div style={{ fontWeight: 'bold', fontSize: 18 }}>{stats.matches}</div>
+                    <div style={{ fontSize: 11, color: '#888' }}>Matches</div>
+                  </div>
+                  <div style={{ textAlign: 'center', flex: 1 }}>
+                    <div style={{ fontWeight: 'bold', fontSize: 18 }}>{stats.victoires}</div>
+                    <div style={{ fontSize: 11, color: '#888' }}>Victoires</div>
+                  </div>
+                  <div style={{ textAlign: 'center', flex: 1 }}>
+                    <div style={{ fontWeight: 'bold', fontSize: 18 }}>{ratio}%</div>
+                    <div style={{ fontSize: 11, color: '#888' }}>Ratio V/D</div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 16, fontSize: 13 }}>
+                  <Link href={`/vestiaire/${player.id}`} style={{ color: CLUB_GOLD, textDecoration: 'none', fontWeight: 600 }}>
+                    {isMe ? 'Voir ma fiche' : 'Voir sa fiche'}
+                  </Link>
+                  {isMe && (
+                    <Link href={`/vestiaire/${player.id}?edit=1`} style={{ color: CLUB_GOLD, textDecoration: 'none', fontWeight: 600 }}>
+                      ✏️ Modifier ma fiche
+                    </Link>
+                  )}
+                </div>
+              </div>
             )
           })}
         </div>

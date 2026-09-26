@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import NavBar from '@/app/components/NavBar'
 
@@ -38,6 +38,7 @@ function positionLabel(pos: string | null) {
 export default function PlayerDetailPage() {
   const params = useParams()
   const playerId = params.id as string
+  const searchParams = useSearchParams()
   const supabase = createClient()
 
   const [myId, setMyId] = useState<string | null>(null)
@@ -47,6 +48,13 @@ export default function PlayerDetailPage() {
   const [loading, setLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (myId && player && myId === player.id && searchParams.get('edit') === '1') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsEditing(true)
+    }
+  }, [myId, player, searchParams])
 
   const [form, setForm] = useState<Partial<PlayerDetail>>({})
   const [newTrophy, setNewTrophy] = useState('')
