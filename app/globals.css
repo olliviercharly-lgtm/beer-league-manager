@@ -54,8 +54,16 @@ html, body {
 }
 
 .blm-pill-active {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--club-blue);
   background: var(--club-blue);
   color: #fff;
+  cursor: pointer;
+  font-size: 14px;
 }
 
 .blm-btn-primary {
