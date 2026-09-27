@@ -58,6 +58,9 @@ export default function PlayerModal({ playerId, initialEditing, onClose }: Props
   const [newTrophyYear, setNewTrophyYear] = useState('')
   const [newNoteText, setNewNoteText] = useState('')
   const [newNoteYear, setNewNoteYear] = useState('')
+  const [bioInstructions, setBioInstructions] = useState('')
+  const [generatingBio, setGeneratingBio] = useState(false)
+  const [bioGenError, setBioGenError] = useState('')
 
   async function loadAll() {
     setLoading(true)
@@ -156,6 +159,28 @@ export default function PlayerModal({ playerId, initialEditing, onClose }: Props
     setSaving(false)
     setIsEditing(false)
     loadAll()
+  }
+
+  async function handleGenerateBio() {
+    if (!player) return
+    setGeneratingBio(true)
+    setBioGenError('')
+    try {
+      const res = await fetch('/api/generate-bio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId: player.id, instructions: bioInstructions }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setBioGenError(data.error || 'Erreur de génération.')
+      } else {
+        setForm((f) => ({ ...f, bio: data.bio }))
+      }
+    } catch {
+      setBioGenError('Erreur de génération.')
+    }
+    setGeneratingBio(false)
   }
 
   async function handleAddTrophy() {
@@ -536,8 +561,31 @@ export default function PlayerModal({ playerId, initialEditing, onClose }: Props
                     onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
                     placeholder="Rédigez votre bio ici..."
                     rows={4}
-                    style={{ width: '100%', padding: 10, borderRadius: 10, border: '1px solid #ddd', background: '#F5F5F5', marginBottom: 20 }}
+                    style={{ width: '100%', padding: 10, borderRadius: 10, border: '1px solid #ddd', background: '#F5F5F5', marginBottom: 16 }}
                   />
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                    <div style={{ flex: 1, height: 1, background: '#eee' }} />
+                    <span style={{ fontSize: 12, color: '#999' }}>OU GÉNÉRER VIA IA</span>
+                    <div style={{ flex: 1, height: 1, background: '#eee' }} />
+                  </div>
+                  <textarea
+                    value={bioInstructions}
+                    onChange={(e) => setBioInstructions(e.target.value)}
+                    placeholder="Donnez quelques indications (ex: mets l'accent sur mon tir précis et mon sens de l'humour)..."
+                    rows={2}
+                    style={{ width: '100%', padding: 10, borderRadius: 10, border: '1px solid #ddd', marginBottom: 10 }}
+                  />
+                  {bioGenError && <p style={{ color: '#B23A2E', fontSize: 13, marginBottom: 10 }}>{bioGenError}</p>}
+                  <button
+                    type="button"
+                    onClick={handleGenerateBio}
+                    disabled={generatingBio}
+                    className="blm-pill"
+                    style={{ width: '100%', justifyContent: 'center', marginBottom: 20 }}
+                  >
+                    {generatingBio ? 'Génération...' : '🪄 Générer via IA'}
+                  </button>
 
                   <div style={{ display: 'flex', gap: 12 }}>
                     <button
