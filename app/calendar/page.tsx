@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import NavBar from '@/app/components/NavBar'
+import { effectiveIsAdmin } from '@/lib/viewRole'
 
 const CLUB_BLUE = '#003F6E'
 const CLUB_GOLD = '#C9A227'
@@ -259,7 +260,7 @@ export default function CalendarPage() {
 
   if (loading) return <p style={{ padding: 40 }}>Chargement...</p>
 
-  const isAdmin = me?.role === 'admin' || me?.role === 'super_admin'
+  const isAdmin = effectiveIsAdmin(me?.role)
   const nextTraining = trainings[0]
 
   return (

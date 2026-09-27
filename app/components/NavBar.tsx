@@ -1,3 +1,4 @@
+
 'use client'
 
 import Link from 'next/link'
@@ -5,6 +6,7 @@ import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { isRealAdmin, getPreviewPlayer, setPreviewPlayer } from '@/lib/viewRole'
 
 const CLUB_BLUE = '#003F6E'
 
@@ -22,6 +24,8 @@ export default function NavBar() {
   const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
   const [myPlayerId, setMyPlayerId] = useState<string | null>(null)
+  const [myRole, setMyRole] = useState<string | null>(null)
+  const [previewPlayer, setPreviewPlayerState] = useState(() => getPreviewPlayer())
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -30,10 +34,13 @@ export default function NavBar() {
       if (!user) return
       const { data: player } = await supabase
         .from('players')
-        .select('id')
+        .select('id, role')
         .eq('auth_user_id', user.id)
         .maybeSingle()
-      if (player) setMyPlayerId(player.id)
+      if (player) {
+        setMyPlayerId(player.id)
+        setMyRole(player.role)
+      }
     }
     loadMe()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -62,6 +69,12 @@ export default function NavBar() {
     } else {
       router.push('/vestiaire')
     }
+  }
+
+  function handleSetView(view: 'admin' | 'joueur') {
+    setPreviewPlayer(view === 'joueur')
+    setMenuOpen(false)
+    window.location.reload()
   }
 
   return (
@@ -133,11 +146,37 @@ export default function NavBar() {
                 background: '#fff',
                 borderRadius: 12,
                 boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
-                minWidth: 200,
+                minWidth: 220,
                 overflow: 'hidden',
                 zIndex: 50,
               }}
             >
+              {isRealAdmin(myRole) && (
+                <div style={{ display: 'flex', gap: 6, padding: '10px 12px', borderBottom: '1px solid #eee' }}>
+                  <button
+                    onClick={() => handleSetView('joueur')}
+                    style={{
+                      flex: 1, padding: '6px 8px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                      border: `1px solid ${CLUB_BLUE}`,
+                      background: previewPlayer ? CLUB_BLUE : '#fff',
+                      color: previewPlayer ? '#fff' : CLUB_BLUE,
+                    }}
+                  >
+                    Vue joueur
+                  </button>
+                  <button
+                    onClick={() => handleSetView('admin')}
+                    style={{
+                      flex: 1, padding: '6px 8px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                      border: `1px solid ${CLUB_BLUE}`,
+                      background: !previewPlayer ? CLUB_BLUE : '#fff',
+                      color: !previewPlayer ? '#fff' : CLUB_BLUE,
+                    }}
+                  >
+                    Vue admin
+                  </button>
+                </div>
+              )}
               <button
                 onClick={handleEditProfile}
                 style={{

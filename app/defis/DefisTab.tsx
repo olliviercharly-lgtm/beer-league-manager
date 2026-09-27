@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { effectiveIsAdmin } from '@/lib/viewRole'
 
 const CLUB_BLUE = '#003F6E'
 
@@ -73,7 +74,7 @@ export default function DefisTab({ onTotals }: { onTotals?: (t: { noir: number; 
     loadAll()
   }, [])
 
-  const isAdmin = me?.role === 'admin' || me?.role === 'super_admin'
+  const isAdmin = effectiveIsAdmin(me?.role)
   const activeChallenges = challenges.filter((c) => c.status === 'active')
   const proposedChallenges = challenges.filter((c) => c.status === 'proposed')
 

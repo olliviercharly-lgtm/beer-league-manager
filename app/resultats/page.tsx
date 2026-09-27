@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import NavBar from '@/app/components/NavBar'
 import MatchModal from './MatchModal'
+import { effectiveIsAdmin } from '@/lib/viewRole'
 
 const CLUB_BLUE = '#003F6E'
 
@@ -93,7 +94,7 @@ export default function ResultatsPage() {
     [pastTrainings, results]
   )
 
-  const isAdmin = me?.role === 'admin' || me?.role === 'super_admin'
+  const isAdmin = effectiveIsAdmin(me?.role)
 
   const seasonStats = useMemo(() => {
     let winsNoir = 0

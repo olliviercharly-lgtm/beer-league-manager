@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import NavBar from '@/app/components/NavBar'
+import { effectiveIsAdmin } from '@/lib/viewRole'
 
 const CLUB_BLUE = '#003F6E'
 
@@ -362,7 +363,7 @@ export default function GazettePage() {
           const lines = article.body.split('\n').filter(Boolean)
           const isExpanded = expandedIds.includes(article.id)
           const visibleLines = isExpanded ? lines : lines.slice(0, 10)
-          const canDelete = me && (me.id === article.author_id || me.role === 'admin' || me.role === 'super_admin')
+          const canDelete = me && (me.id === article.author_id || effectiveIsAdmin(me.role))
 
           return (
             <div key={article.id} className="blm-card" style={{ marginBottom: 16 }}>
