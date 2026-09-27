@@ -18,7 +18,7 @@ type Challenge = {
 type Vote = { id: string; challenge_id: string; player_id: string; vote: string }
 type ResultChallenge = { id: string; challenge_id: string; team: string }
 
-export default function DefisTab() {
+export default function DefisTab({ onTotals }: { onTotals?: (t: { noir: number; blanc: number }) => void }) {
   const supabase = createClient()
   const [me, setMe] = useState<Player | null>(null)
   const [challenges, setChallenges] = useState<Challenge[]>([])
@@ -92,6 +92,11 @@ export default function DefisTab() {
     return { noir, blanc, pctNoir }
   }, [resultChallenges, challenges])
 
+  useEffect(() => {
+    onTotals?.({ noir: classement.noir, blanc: classement.blanc })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [classement.noir, classement.blanc])
+
   async function handleCreateChallenge(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
@@ -147,17 +152,6 @@ export default function DefisTab() {
 
   return (
     <>
-      <div className="blm-card" style={{ marginBottom: 24 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 6 }}>
-            <span>Noir — {classement.noir} pts</span>
-            <span>Blanc — {classement.blanc} pts</span>
-          </div>
-          <div style={{ display: 'flex', height: 10, borderRadius: 6, overflow: 'hidden' }}>
-            <div style={{ width: `${classement.pctNoir}%`, background: '#111' }} />
-            <div style={{ width: `${100 - classement.pctNoir}%`, background: '#ccc' }} />
-          </div>
-        </div>
-
         <h2 style={{ fontSize: 18, marginBottom: 12 }}>Défis officiels</h2>
         {activeChallenges.length === 0 && <p style={{ color: '#666' }}>Aucun défi officiel pour le moment.</p>}
         {activeChallenges.map((c) => (

@@ -20,7 +20,7 @@ type Training = { id: string; date_time: string }
 type ResultChallenge = { id: string; result_id: string; challenge_id: string; team: string }
 type Override = { id: string; badge_key: string; team: string; status: string; points: number | null }
 
-export default function BadgesTab() {
+export default function BadgesTab({ onTotals }: { onTotals?: (t: { noir: number; blanc: number }) => void }) {
   const supabase = createClient()
   const [me, setMe] = useState<Player | null>(null)
   const [results, setResults] = useState<Result[]>([])
@@ -197,6 +197,11 @@ export default function BadgesTab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [computed, overrides])
 
+  useEffect(() => {
+    onTotals?.({ noir: totalPoints.noir, blanc: totalPoints.blanc })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalPoints.noir, totalPoints.blanc])
+
   async function setOverrideStatus(badgeKey: string, team: string, status: 'validé' | 'non_validé' | 'auto') {
     const existing = getOverride(badgeKey, team)
     if (status === 'auto') {
@@ -217,22 +222,9 @@ export default function BadgesTab() {
 
   if (loading) return <p style={{ padding: 40 }}>Chargement...</p>
 
-  const total = totalPoints.noir + totalPoints.blanc || 1
-  const pctNoir = Math.round((totalPoints.noir / total) * 100)
-
   return (
     <>
-      <div className="blm-card" style={{ marginBottom: 24 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 6 }}>
-            <span>Noir — {totalPoints.noir} pts de badges</span>
-            <span>Blanc — {totalPoints.blanc} pts de badges</span>
-          </div>
-          <div style={{ display: 'flex', height: 10, borderRadius: 6, overflow: 'hidden' }}>
-            <div style={{ width: `${pctNoir}%`, background: '#111' }} />
-            <div style={{ width: `${100 - pctNoir}%`, background: '#ccc' }} />
-          </div>
-        </div>
-
+        <h2 style={{ fontSize: 18, margin: '32px 0 12px' }}>🏅 Badges de la saison</h2>
         {BADGE_CATALOG.map((b) => (
           <div key={b.key} className="blm-card" style={{ marginBottom: 12 }}>
             <div style={{ fontWeight: 'bold' }}>{b.label}</div>
