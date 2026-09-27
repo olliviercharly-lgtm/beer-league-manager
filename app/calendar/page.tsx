@@ -147,45 +147,6 @@ export default function CalendarPage() {
     loadAll()
   }
 
-  async function handleBalanceTeams(presentRows: AttendanceRow[]) {
-    type Item = { id: string; team: string; position: string }
-    const items: Item[] = presentRows.map((r) => ({ id: r.id, team: effectiveTeam(r), position: effectivePosition(r) }))
-    const updates: { id: string; team: string }[] = []
-    let guard = 0
-
-    while (guard < 20) {
-      guard++
-      const noir = items.filter((i) => i.team === 'noir')
-      const blanc = items.filter((i) => i.team === 'blanc')
-      const diff = noir.length - blanc.length
-      if (Math.abs(diff) <= 1) break
-
-      const largerTeam = diff > 0 ? 'noir' : 'blanc'
-      const smallerTeam = diff > 0 ? 'blanc' : 'noir'
-      const larger = diff > 0 ? noir : blanc
-      const smaller = diff > 0 ? blanc : noir
-
-      const largerA = larger.filter((i) => i.position === 'attaquant').length
-      const largerD = larger.filter((i) => i.position === 'defenseur').length
-      const smallerA = smaller.filter((i) => i.position === 'attaquant').length
-      const smallerD = smaller.filter((i) => i.position === 'defenseur').length
-      const preferred = (largerA - smallerA) >= (largerD - smallerD) ? 'attaquant' : 'defenseur'
-
-      let candidate = larger.find((i) => i.position === preferred)
-      if (!candidate) candidate = larger.find((i) => i.position !== 'gardien')
-      if (!candidate) candidate = larger[0]
-      if (!candidate) break
-
-      candidate.team = smallerTeam
-      updates.push({ id: candidate.id, team: smallerTeam })
-      void largerTeam
-    }
-
-    if (updates.length === 0) return
-    await Promise.all(updates.map((u) => supabase.from('attendance').update({ team: u.team }).eq('id', u.id)))
-    loadAll()
-  }
-
   async function setMyStatus(trainingId: string, status: string) {
     if (!me) return
     await supabase.from('attendance').upsert(
@@ -547,17 +508,6 @@ export default function CalendarPage() {
                       <> · <span style={{ color: '#B23A2E' }}>{forfaits.length} forfait{forfaits.length > 1 ? 's' : ''}</span></>
                     )}
                   </div>
-
-                  <button
-                    onClick={() => handleBalanceTeams(presents)}
-                    style={{
-                      width: '100%', marginTop: 12, padding: '12px', borderRadius: 12,
-                      border: `1.5px solid ${CLUB_BLUE}`, background: 'transparent', color: CLUB_BLUE,
-                      fontWeight: 700, fontSize: 14.5, cursor: 'pointer',
-                    }}
-                  >
-                    ⇄ Équilibrer Noirs/Blancs
-                  </button>
                 </>
               )}
             </div>
