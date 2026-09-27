@@ -18,6 +18,7 @@ type Challenge = {
 }
 type Vote = { id: string; challenge_id: string; player_id: string; vote: string }
 type ResultChallenge = { id: string; challenge_id: string; team: string }
+type PlayerInfo = { id: string; first_name: string; last_name: string }
 
 export default function DefisTab({ onTotals }: { onTotals?: (t: { noir: number; blanc: number }) => void }) {
   const supabase = createClient()
@@ -25,6 +26,7 @@ export default function DefisTab({ onTotals }: { onTotals?: (t: { noir: number; 
   const [challenges, setChallenges] = useState<Challenge[]>([])
   const [votes, setVotes] = useState<Vote[]>([])
   const [resultChallenges, setResultChallenges] = useState<ResultChallenge[]>([])
+  const [players, setPlayers] = useState<PlayerInfo[]>([])
   const [loading, setLoading] = useState(true)
 
   const [newTitle, setNewTitle] = useState('')
@@ -73,6 +75,11 @@ export default function DefisTab({ onTotals }: { onTotals?: (t: { noir: number; 
       .from('result_challenges')
       .select('id, challenge_id, team')
     setResultChallenges(resultChallengesData || [])
+
+    const { data: playersData } = await supabase
+      .from('players')
+      .select('id, first_name, last_name')
+    setPlayers(playersData || [])
 
     setLoading(false)
   }
@@ -287,54 +294,82 @@ export default function DefisTab({ onTotals }: { onTotals?: (t: { noir: number; 
               const pct = challengeVotes.length > 0 ? Math.round((pourCount / challengeVotes.length) * 100) : 0
               const myVote = challengeVotes.find((v) => v.player_id === me?.id)
 
+              const proposer = players.find((p) => p.id === c.proposed_by)
+              const contreCount = challengeVotes.length - pourCount
+
               return (
-                <div key={c.id} className="blm-card" style={{ marginBottom: 12 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <strong>{c.title}</strong>
-                    <span style={{ color: CLUB_BLUE, fontWeight: 'bold' }}>{c.points} pts</span>
+                <div
+                  key={c.id}
+                  className="blm-card"
+                  style={{ marginBottom: 16, borderTop: `4px solid ${CLUB_BLUE}`, paddingTop: 16 }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 19, fontWeight: 'bold', marginBottom: 8 }}>
+                    {c.icon && <span>{c.icon}</span>}
+                    <span>{c.title}</span>
                   </div>
-                  {c.description && <p style={{ fontSize: 14, color: '#555', margin: '6px 0' }}>{c.description}</p>}
-                  <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>
-                    {challengeVotes.length} votant(s) · {pct}% pour
+                  {c.description && (
+                    <p style={{ fontSize: 14, color: '#555', margin: '0 0 8px', lineHeight: 1.5 }}>{c.description}</p>
+                  )}
+                  <div style={{ fontSize: 13, color: '#888', marginBottom: 16 }}>
+                    Proposé par {proposer ? `${proposer.first_name} ${proposer.last_name}` : 'un joueur'} · {c.points} pts suggérés
                   </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
+
+                  <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
                     <button
                       onClick={() => handleVote(c.id, 'pour')}
                       style={{
-                        padding: '6px 12px', borderRadius: 6, border: '1px solid #2E7D5B', cursor: 'pointer',
-                        background: myVote?.vote === 'pour' ? '#2E7D5B' : '#fff',
-                        color: myVote?.vote === 'pour' ? '#fff' : '#2E7D5B',
+                        flex: 1, padding: '14px 12px', borderRadius: 12, cursor: 'pointer',
+                        fontSize: 15, fontWeight: myVote?.vote === 'pour' ? 700 : 500,
+                        border: myVote?.vote === 'pour' ? '1.5px solid #2E7D5B' : '1.5px solid #ddd',
+                        background: myVote?.vote === 'pour' ? '#DFF3E7' : '#fff',
+                        color: myVote?.vote === 'pour' ? '#1F6B45' : '#555',
                       }}
                     >
-                      Pour
+                      👍 Pour
                     </button>
                     <button
                       onClick={() => handleVote(c.id, 'contre')}
                       style={{
-                        padding: '6px 12px', borderRadius: 6, border: '1px solid #B23A2E', cursor: 'pointer',
-                        background: myVote?.vote === 'contre' ? '#B23A2E' : '#fff',
-                        color: myVote?.vote === 'contre' ? '#fff' : '#B23A2E',
+                        flex: 1, padding: '14px 12px', borderRadius: 12, cursor: 'pointer',
+                        fontSize: 15, fontWeight: myVote?.vote === 'contre' ? 700 : 500,
+                        border: myVote?.vote === 'contre' ? '1.5px solid #B23A2E' : '1.5px solid #ddd',
+                        background: myVote?.vote === 'contre' ? '#FBE4E1' : '#fff',
+                        color: myVote?.vote === 'contre' ? '#B23A2E' : '#555',
                       }}
                     >
-                      Contre
+                      👎 Contre
                     </button>
-                    {isAdmin && (
-                      <>
-                        <button
-                          onClick={() => handleValidateProposal(c.id)}
-                          style={{ marginLeft: 'auto', padding: '6px 12px', borderRadius: 6, border: 'none', background: CLUB_BLUE, color: '#fff', cursor: 'pointer' }}
-                        >
-                          Valider
-                        </button>
-                        <button
-                          onClick={() => handleRejectProposal(c.id)}
-                          style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #999', background: '#fff', color: '#666', cursor: 'pointer' }}
-                        >
-                          Rejeter
-                        </button>
-                      </>
-                    )}
                   </div>
+
+                  <div style={{ display: 'flex', height: 10, borderRadius: 999, overflow: 'hidden', marginBottom: 8, background: '#eee' }}>
+                    <div style={{ width: `${pct}%`, background: '#2E7D5B' }} />
+                    <div style={{ width: `${100 - pct}%`, background: '#B23A2E' }} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#666', marginBottom: isAdmin ? 16 : 0 }}>
+                    <span>{pourCount} pour · {contreCount} contre</span>
+                    <span style={{ fontWeight: 'bold', color: '#333' }}>{pct}% pour ({challengeVotes.length} votants)</span>
+                  </div>
+
+                  {isAdmin && (
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      <button
+                        onClick={() => handleValidateProposal(c.id)}
+                        className="blm-btn-primary"
+                        style={{ flex: 1, justifyContent: 'center' }}
+                      >
+                        ✓ Valider ce défi
+                      </button>
+                      <button
+                        onClick={() => handleRejectProposal(c.id)}
+                        style={{
+                          flex: 1, padding: '10px 12px', borderRadius: 10, border: '1px solid #B23A2E',
+                          background: '#fff', color: '#B23A2E', cursor: 'pointer', fontWeight: 600,
+                        }}
+                      >
+                        🗑️ Rejeter
+                      </button>
+                    </div>
+                  )}
                 </div>
               )
             })}
