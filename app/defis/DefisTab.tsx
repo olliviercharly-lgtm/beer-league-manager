@@ -33,6 +33,14 @@ export default function DefisTab({ onTotals }: { onTotals?: (t: { noir: number; 
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
 
+  const [editingChallenge, setEditingChallenge] = useState<Challenge | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editDescription, setEditDescription] = useState('')
+  const [editPoints, setEditPoints] = useState('0')
+  const [editIcon, setEditIcon] = useState('')
+  const [editSaving, setEditSaving] = useState(false)
+  const [editError, setEditError] = useState('')
+
   async function loadAll() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
@@ -128,6 +136,43 @@ export default function DefisTab({ onTotals }: { onTotals?: (t: { noir: number; 
     loadAll()
   }
 
+  function handleStartEdit(c: Challenge) {
+    setEditingChallenge(c)
+    setEditTitle(c.title)
+    setEditDescription(c.description || '')
+    setEditPoints(String(c.points))
+    setEditIcon(c.icon || '')
+    setEditError('')
+  }
+
+  function handleCancelEdit() {
+    setEditingChallenge(null)
+  }
+
+  async function handleSaveEdit() {
+    if (!editingChallenge) return
+    setEditSaving(true)
+    setEditError('')
+    const { error } = await supabase
+      .from('challenges')
+      .update({
+        title: editTitle,
+        description: editDescription || null,
+        points: Number(editPoints) || 0,
+        icon: editIcon || null,
+      })
+      .eq('id', editingChallenge.id)
+
+    if (error) {
+      setEditError(error.message)
+      setEditSaving(false)
+    } else {
+      setEditSaving(false)
+      setEditingChallenge(null)
+      loadAll()
+    }
+  }
+
   async function handleValidateProposal(id: string) {
     await supabase.from('challenges').update({ status: 'active' }).eq('id', id)
     loadAll()
@@ -178,16 +223,28 @@ export default function DefisTab({ onTotals }: { onTotals?: (t: { noir: number; 
               {c.description && <p style={{ fontSize: 13, color: '#666', margin: '6px 0 0' }}>{c.description}</p>}
             </div>
             {isAdmin && (
-              <button
-                onClick={() => handleDeleteChallenge(c.id)}
-                title="Supprimer"
-                style={{
-                  border: '1px solid #B23A2E', color: '#B23A2E', background: 'none', borderRadius: 8,
-                  width: 32, height: 32, cursor: 'pointer', fontSize: 14, flexShrink: 0,
-                }}
-              >
-                🗑️
-              </button>
+              <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                <button
+                  onClick={() => handleStartEdit(c)}
+                  title="Modifier"
+                  style={{
+                    border: `1px solid ${CLUB_BLUE}`, color: CLUB_BLUE, background: 'none', borderRadius: 8,
+                    width: 32, height: 32, cursor: 'pointer', fontSize: 14,
+                  }}
+                >
+                  ✏️
+                </button>
+                <button
+                  onClick={() => handleDeleteChallenge(c.id)}
+                  title="Supprimer"
+                  style={{
+                    border: '1px solid #B23A2E', color: '#B23A2E', background: 'none', borderRadius: 8,
+                    width: 32, height: 32, cursor: 'pointer', fontSize: 14,
+                  }}
+                >
+                  🗑️
+                </button>
+              </div>
             )}
           </div>
         ))}
@@ -283,6 +340,72 @@ export default function DefisTab({ onTotals }: { onTotals?: (t: { noir: number; 
             })}
           </>
         )}
+
+      {editingChallenge && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 16,
+          }}
+          onClick={handleCancelEdit}
+        >
+          <div className="blm-card" style={{ maxWidth: 420, width: '100%' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ fontWeight: 'bold', fontSize: 18 }}>Modifier le défi</div>
+              <button
+                onClick={handleCancelEdit}
+                style={{ border: '1px solid #ddd', borderRadius: '50%', width: 32, height: 32, background: '#fff', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '12px 0' }} />
+
+            <div style={{ fontSize: 12, color: '#999', fontWeight: 'bold', marginBottom: 6 }}>ICÔNE (emoji)</div>
+            <input
+              value={editIcon}
+              onChange={(e) => setEditIcon(e.target.value)}
+              placeholder="🏆"
+              style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #ddd', marginBottom: 16 }}
+            />
+
+            <div style={{ fontSize: 12, color: '#999', fontWeight: 'bold', marginBottom: 6 }}>TITRE</div>
+            <input
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #ddd', marginBottom: 16 }}
+            />
+
+            <div style={{ fontSize: 12, color: '#999', fontWeight: 'bold', marginBottom: 6 }}>DESCRIPTION</div>
+            <textarea
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              rows={2}
+              style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #ddd', marginBottom: 16 }}
+            />
+
+            <div style={{ fontSize: 12, color: '#999', fontWeight: 'bold', marginBottom: 6 }}>POINTS</div>
+            <input
+              type="number"
+              value={editPoints}
+              onChange={(e) => setEditPoints(e.target.value)}
+              style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #ddd', marginBottom: 16 }}
+            />
+
+            {editError && <p style={{ color: '#B23A2E', fontSize: 13, marginBottom: 12 }}>{editError}</p>}
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button onClick={handleCancelEdit} className="blm-pill" style={{ flex: 1, justifyContent: 'center' }}>
+                Annuler
+              </button>
+              <button onClick={handleSaveEdit} disabled={editSaving} className="blm-btn-primary" style={{ flex: 1 }}>
+                {editSaving ? '...' : '✓ Enregistrer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
