@@ -36,6 +36,11 @@ export default function ParametresPage() {
   const [copied, setCopied] = useState(false)
   const [origin, setOrigin] = useState('')
 
+  type PlayerRow = { id: string; first_name: string; last_name: string; team: string; role: string }
+  const [players, setPlayers] = useState<PlayerRow[]>([])
+  const [roleSavingId, setRoleSavingId] = useState<string | null>(null)
+  const [roleError, setRoleError] = useState('')
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setOrigin(window.location.origin)
@@ -56,11 +61,37 @@ export default function ParametresPage() {
         setTeamNoirColor(data.league.team_noir_color)
         setTeamBlancColor(data.league.team_blanc_color)
         setInviteCode(data.league.invite_code)
+
+        const playersRes = await fetch('/api/players')
+        if (playersRes.ok) {
+          const playersData = await playersRes.json()
+          setPlayers(playersData.players || [])
+        }
       }
       setLoading(false)
     }
     load()
   }, [])
+
+  async function handleToggleRole(playerId: string, currentRole: string) {
+    setRoleSavingId(playerId)
+    setRoleError('')
+    const newRole = currentRole === 'admin' ? 'player' : 'admin'
+
+    const res = await fetch('/api/players', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ playerId, role: newRole }),
+    })
+
+    const data = await res.json()
+    if (!res.ok) {
+      setRoleError(data.error || 'Erreur lors de la modification.')
+    } else {
+      setPlayers((prev) => prev.map((p) => (p.id === playerId ? { ...p, role: newRole } : p)))
+    }
+    setRoleSavingId(null)
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -269,6 +300,55 @@ export default function ParametresPage() {
             {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
           </button>
         </form>
+
+        <h2 style={{ fontSize: 18, margin: '32px 0 12px' }}>👥 Gestion des admins</h2>
+        <p style={{ fontSize: 13, color: '#666', marginBottom: 16 }}>
+          Les administrateurs peuvent gérer la ligue, valider les défis et modifier les fiches.
+        </p>
+
+        {roleError && <p style={{ color: '#B23A2E', fontSize: 14, marginBottom: 12 }}>{roleError}</p>}
+
+        <div className="blm-card" style={{ padding: 0, overflow: 'hidden' }}>
+          {players.map((p, i) => (
+            <div
+              key={p.id}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+                padding: '12px 16px', borderBottom: i < players.length - 1 ? '1px solid #eee' : 'none',
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: 600 }}>{p.first_name} {p.last_name}</div>
+                <div style={{ fontSize: 12, color: '#888' }}>
+                  {p.team === 'noir' ? 'Noir' : 'Blanc'}
+                  {p.role === 'super_admin' && ' · Super admin'}
+                  {p.role === 'admin' && ' · Admin'}
+                </div>
+              </div>
+              {p.role === 'super_admin' ? (
+                <span style={{ fontSize: 12, color: '#999' }}>Protégé</span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleToggleRole(p.id, p.role)}
+                  disabled={roleSavingId === p.id}
+                  style={{
+                    padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                    border: `1px solid ${p.role === 'admin' ? '#B23A2E' : CLUB_BLUE}`,
+                    background: '#fff',
+                    color: p.role === 'admin' ? '#B23A2E' : CLUB_BLUE,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {roleSavingId === p.id ? '...' : p.role === 'admin' ? 'Retirer admin' : 'Rendre admin'}
+                </button>
+              )}
+            </div>
+          ))}
+          {players.length === 0 && (
+            <p style={{ padding: 16, color: '#666', fontSize: 14 }}>Aucun joueur trouvé.</p>
+          )}
+        </div>
       </div>
     </>
   )
