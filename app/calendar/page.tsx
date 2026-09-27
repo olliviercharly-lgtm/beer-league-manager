@@ -108,7 +108,7 @@ export default function CalendarPage() {
   async function setMyStatus(trainingId: string, status: string) {
     if (!me) return
     await supabase.from('attendance').upsert(
-      { training_id: trainingId, player_id: me.id, status },
+      { training_id: trainingId, player_id: me.id, status, team: me.team },
       { onConflict: 'training_id,player_id' }
     )
     loadAll()

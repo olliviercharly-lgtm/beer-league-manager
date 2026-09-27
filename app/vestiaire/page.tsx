@@ -16,7 +16,7 @@ type Player = {
   position: string
 }
 
-type AttendanceRow = { player_id: string; training_id: string; status: string }
+type AttendanceRow = { player_id: string; training_id: string; status: string; team: string | null }
 type ResultRow = { training_id: string; score_noir: number; score_blanc: number }
 
 const CLUB_BLUE = '#003F6E'
@@ -60,7 +60,7 @@ function VestiaireContent() {
 
       const { data: attendanceData } = await supabase
         .from('attendance')
-        .select('player_id, training_id, status')
+        .select('player_id, training_id, status, team')
         .eq('status', 'present')
       setAttendance(attendanceData || [])
 
@@ -87,8 +87,9 @@ function VestiaireContent() {
       if (!result) return
       if (!map[a.player_id]) map[a.player_id] = { matches: 0, victoires: 0 }
       map[a.player_id].matches += 1
-      const mine = player.team === 'noir' ? result.score_noir : result.score_blanc
-      const other = player.team === 'noir' ? result.score_blanc : result.score_noir
+      const effectiveTeam = a.team ?? player.team
+      const mine = effectiveTeam === 'noir' ? result.score_noir : result.score_blanc
+      const other = effectiveTeam === 'noir' ? result.score_blanc : result.score_noir
       if (mine > other) map[a.player_id].victoires += 1
     })
 

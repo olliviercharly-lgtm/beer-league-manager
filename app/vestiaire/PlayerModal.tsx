@@ -25,7 +25,7 @@ type PlayerDetail = {
 }
 type Palmares = { id: string; player_id: string; trophy: string; year: number | null }
 type Note = { id: string; player_id: string; text: string; year: number | null }
-type AttendanceRow = { training_id: string }
+type AttendanceRow = { training_id: string; team: string | null }
 type ResultRow = { training_id: string; score_noir: number; score_blanc: number }
 
 function positionLabel(pos: string | null) {
@@ -100,7 +100,7 @@ export default function PlayerModal({ playerId, initialEditing, onClose }: Props
 
     const { data: attendanceData } = await supabase
       .from('attendance')
-      .select('training_id')
+      .select('training_id, team')
       .eq('player_id', playerId)
       .eq('status', 'present')
     setAttendance(attendanceData || [])
@@ -129,8 +129,9 @@ export default function PlayerModal({ playerId, initialEditing, onClose }: Props
       const result = resultsByTraining[a.training_id]
       if (!result) return
       matches += 1
-      const mine = player.team === 'noir' ? result.score_noir : result.score_blanc
-      const other = player.team === 'noir' ? result.score_blanc : result.score_noir
+      const effectiveTeam = a.team ?? player.team
+      const mine = effectiveTeam === 'noir' ? result.score_noir : result.score_blanc
+      const other = effectiveTeam === 'noir' ? result.score_blanc : result.score_noir
       if (mine > other) victoires += 1
     })
     const ratio = matches > 0 ? Math.round((victoires / matches) * 100) : 0
