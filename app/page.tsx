@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import NavBar from '@/app/components/NavBar'
 
 export default async function Home() {
   const supabase = await createClient()
@@ -12,7 +11,7 @@ export default async function Home() {
 
   const { data: player } = await supabase
     .from('players')
-    .select('first_name, last_name, team, role')
+    .select('id')
     .eq('auth_user_id', user.id)
     .maybeSingle()
 
@@ -20,13 +19,5 @@ export default async function Home() {
     redirect('/onboarding')
   }
 
-  return (
-    <div>
-      <NavBar />
-      <div style={{ maxWidth: 500, margin: '40px auto', fontFamily: 'sans-serif' }}>
-        <h1>Salut {player.first_name} !</h1>
-        <p>Tu es dans l&apos;équipe {player.team === 'noir' ? 'Noir' : 'Blanc'}.</p>
-      </div>
-    </div>
-  )
+  redirect('/calendar')
 }
