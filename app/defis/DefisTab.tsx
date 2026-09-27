@@ -155,18 +155,37 @@ export default function DefisTab({ onTotals }: { onTotals?: (t: { noir: number; 
         <h2 style={{ fontSize: 18, marginBottom: 12 }}>Défis officiels</h2>
         {activeChallenges.length === 0 && <p style={{ color: '#666' }}>Aucun défi officiel pour le moment.</p>}
         {activeChallenges.map((c) => (
-          <div key={c.id} className="blm-card" style={{ marginBottom: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <strong>{c.icon ? `${c.icon} ` : ''}{c.title}</strong>
-              <span style={{ color: CLUB_BLUE, fontWeight: 'bold' }}>{c.points} pts</span>
+          <div
+            key={c.id}
+            className="blm-card"
+            style={{
+              marginBottom: 12,
+              borderTop: `4px solid ${CLUB_BLUE}`,
+              paddingTop: 14,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              gap: 12,
+              flexWrap: 'wrap',
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: 600 }}>
+                {c.icon ? `${c.icon} ` : ''}{c.title}
+                <span style={{ color: CLUB_BLUE, fontWeight: 'bold', marginLeft: 8 }}>{c.points} pts</span>
+              </div>
+              {c.description && <p style={{ fontSize: 13, color: '#666', margin: '6px 0 0' }}>{c.description}</p>}
             </div>
-            {c.description && <p style={{ fontSize: 14, color: '#555', margin: '6px 0 0' }}>{c.description}</p>}
             {isAdmin && (
               <button
                 onClick={() => handleDeleteChallenge(c.id)}
-                style={{ marginTop: 8, fontSize: 12, color: '#B23A2E', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                title="Supprimer"
+                style={{
+                  border: '1px solid #B23A2E', color: '#B23A2E', background: 'none', borderRadius: 8,
+                  width: 32, height: 32, cursor: 'pointer', fontSize: 14, flexShrink: 0,
+                }}
               >
-                Supprimer
+                🗑️
               </button>
             )}
           </div>

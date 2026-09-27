@@ -315,7 +315,39 @@ export default function BadgesTab({ onTotals }: { onTotals?: (t: { noir: number;
               const unlocked = isUnlocked(b.key, team)
               const pts = effectivePoints(b, team)
               return (
-                <div key={b.key} className="blm-card" style={{ textAlign: 'center', position: 'relative' }}>
+                <div
+                  key={b.key}
+                  className="blm-card"
+                  style={{
+                    textAlign: 'center',
+                    position: 'relative',
+                    borderRadius: 16,
+                    border: unlocked ? '2px solid #2E7D5B' : undefined,
+                    boxShadow: unlocked ? '0 0 0 3px rgba(46,125,91,0.12)' : undefined,
+                  }}
+                >
+                  {unlocked && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: -8,
+                        right: -8,
+                        width: 22,
+                        height: 22,
+                        borderRadius: '50%',
+                        background: '#2E7D5B',
+                        color: '#fff',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+                      }}
+                    >
+                      ✓
+                    </div>
+                  )}
                   <div
                     style={{
                       width: 56,
