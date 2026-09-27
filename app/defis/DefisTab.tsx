@@ -193,10 +193,18 @@ export default function DefisTab({ onTotals }: { onTotals?: (t: { noir: number; 
   async function handleVote(challengeId: string, voteValue: 'pour' | 'contre') {
     if (!me) return
     const existing = votes.find((v) => v.challenge_id === challengeId && v.player_id === me.id)
+    let error = null
     if (existing) {
-      await supabase.from('challenge_votes').update({ vote: voteValue }).eq('id', existing.id)
+      const res = await supabase.from('challenge_votes').update({ vote: voteValue }).eq('id', existing.id)
+      error = res.error
     } else {
-      await supabase.from('challenge_votes').insert({ challenge_id: challengeId, player_id: me.id, vote: voteValue })
+      const res = await supabase.from('challenge_votes').insert({ challenge_id: challengeId, player_id: me.id, vote: voteValue })
+      error = res.error
+    }
+    if (error) {
+      console.error('Erreur vote:', error)
+      alert('Erreur lors du vote : ' + error.message)
+      return
     }
     loadAll()
   }
