@@ -151,36 +151,10 @@ export default function ResultatsPage() {
 
         {results.length > 0 && (
           <div className="blm-card" style={{ marginBottom: 24 }}>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                gap: 12,
-                marginBottom: 16,
-              }}
-            >
-              {[
-                { label: 'Victoires Noir', value: seasonStats.winsNoir },
-                { label: 'Victoires Blanc', value: seasonStats.winsBlanc },
-                { label: 'Buts Noir', value: seasonStats.goalsNoir },
-                { label: 'Buts Blanc', value: seasonStats.goalsBlanc },
-              ].map((s) => (
-                <div
-                  key={s.label}
-                  style={{
-                    background: '#F5F7FA',
-                    border: '1px solid #E3E8EF',
-                    borderRadius: 10,
-                    padding: 14,
-                    textAlign: 'left',
-                  }}
-                >
-                  <div style={{ fontSize: 28, fontWeight: 700, color: CLUB_BLUE }}>{s.value}</div>
-                  <div style={{ fontSize: 12, color: '#666' }}>{s.label}</div>
-                </div>
-              ))}
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 6 }}>
+              <span>Noir — {seasonStats.winsNoir} victoire(s) ({seasonStats.goalsNoir}b)</span>
+              <span>Blanc — {seasonStats.winsBlanc} victoire(s) ({seasonStats.goalsBlanc}b)</span>
             </div>
-
             <div style={{ display: 'flex', height: 10, borderRadius: 6, overflow: 'hidden', marginBottom: 16 }}>
               <div style={{ width: `${seasonStats.pctNoir}%`, background: '#111' }} />
               <div style={{ width: `${100 - seasonStats.pctNoir}%`, background: '#ccc' }} />
