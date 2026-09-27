@@ -35,6 +35,7 @@ export default function BadgesTab({ onTotals }: { onTotals?: (t: { noir: number;
   const [overrides, setOverrides] = useState<Override[]>([])
   const [loading, setLoading] = useState(true)
 
+  const [selectedTeam, setSelectedTeam] = useState<'noir' | 'blanc'>('noir')
   const [selected, setSelected] = useState<{ badgeKey: string; team: 'noir' | 'blanc' } | null>(null)
   const [pointsInput, setPointsInput] = useState('0')
   const [statusInput, setStatusInput] = useState<'auto' | 'validé' | 'non_validé'>('auto')
@@ -306,92 +307,102 @@ export default function BadgesTab({ onTotals }: { onTotals?: (t: { noir: number;
         Débloqués automatiquement dès qu&apos;une équipe remplit la condition.
       </p>
 
-      {(['noir', 'blanc'] as const).map((team) => (
-        <div key={team} style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 12, fontWeight: 'bold', color: '#999', letterSpacing: 1, marginBottom: 10 }}>
-            {team === 'noir' ? 'NOIR' : 'BLANC'}
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            {BADGE_CATALOG.map((b) => {
-              const unlocked = isUnlocked(b.key, team)
-              const pts = effectivePoints(b, team)
-              return (
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <button
+          onClick={() => setSelectedTeam('noir')}
+          className={selectedTeam === 'noir' ? 'blm-pill-active' : 'blm-pill'}
+          style={{ flex: 1, justifyContent: 'center', fontWeight: 'bold' }}
+        >
+          NOIR
+        </button>
+        <button
+          onClick={() => setSelectedTeam('blanc')}
+          className={selectedTeam === 'blanc' ? 'blm-pill-active' : 'blm-pill'}
+          style={{ flex: 1, justifyContent: 'center', fontWeight: 'bold' }}
+        >
+          BLANC
+        </button>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
+        {BADGE_CATALOG.map((b) => {
+          const unlocked = isUnlocked(b.key, selectedTeam)
+          const pts = effectivePoints(b, selectedTeam)
+          return (
+            <div
+              key={b.key}
+              className="blm-card"
+              style={{
+                textAlign: 'center',
+                position: 'relative',
+                borderRadius: 16,
+                border: unlocked ? '2px solid #2E7D5B' : undefined,
+                boxShadow: unlocked ? '0 0 0 3px rgba(46,125,91,0.12)' : undefined,
+              }}
+            >
+              {unlocked && (
                 <div
-                  key={b.key}
-                  className="blm-card"
                   style={{
-                    textAlign: 'center',
-                    position: 'relative',
-                    borderRadius: 16,
-                    border: unlocked ? '2px solid #2E7D5B' : undefined,
-                    boxShadow: unlocked ? '0 0 0 3px rgba(46,125,91,0.12)' : undefined,
+                    position: 'absolute',
+                    top: -8,
+                    right: -8,
+                    width: 22,
+                    height: 22,
+                    borderRadius: '50%',
+                    background: '#2E7D5B',
+                    color: '#fff',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
                   }}
                 >
-                  {unlocked && (
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: -8,
-                        right: -8,
-                        width: 22,
-                        height: 22,
-                        borderRadius: '50%',
-                        background: '#2E7D5B',
-                        color: '#fff',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
-                      }}
-                    >
-                      ✓
-                    </div>
-                  )}
-                  <div
-                    style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 14,
-                      background: unlocked ? '#EAF2FB' : '#F2F2F2',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 28,
-                      margin: '0 auto 10px',
-                      filter: unlocked ? 'none' : 'grayscale(1)',
-                      opacity: unlocked ? 1 : 0.6,
-                    }}
-                  >
-                    {b.icon}
-                  </div>
-                  <div style={{ fontWeight: 'bold', fontSize: 15 }}>{b.label}</div>
-                  <div style={{ fontSize: 13, color: '#666', margin: '4px 0 10px' }}>{b.description}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                    {unlocked ? (
-                      <span style={{ fontWeight: 'bold', color: pts >= 0 ? CLUB_BLUE : '#B23A2E' }}>
-                        {pts >= 0 ? '+' : ''}{pts} pts
-                      </span>
-                    ) : (
-                      <span style={{ fontSize: 12, color: '#999' }}>Non débloqué</span>
-                    )}
-                    {isAdmin && (
-                      <button
-                        onClick={() => openEditor(b.key, team)}
-                        style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 14, padding: 0 }}
-                        aria-label="Modifier le badge"
-                      >
-                        ✏️
-                      </button>
-                    )}
-                  </div>
+                  ✓
                 </div>
-              )
-            })}
-          </div>
-        </div>
-      ))}
+              )}
+              <div
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 14,
+                  background: unlocked ? '#EAF2FB' : '#F2F2F2',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 28,
+                  margin: '0 auto 10px',
+                  filter: unlocked ? 'none' : 'grayscale(1)',
+                  opacity: unlocked ? 1 : 0.6,
+                }}
+              >
+                {b.icon}
+              </div>
+              <div style={{ fontWeight: 'bold', fontSize: 15 }}>{b.label}</div>
+              <div style={{ fontSize: 13, color: '#666', margin: '4px 0 10px' }}>{b.description}</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                {unlocked ? (
+                  <span style={{ fontWeight: 'bold', color: pts >= 0 ? CLUB_BLUE : '#B23A2E' }}>
+                    {pts >= 0 ? '+' : ''}{pts} pts
+                  </span>
+                ) : (
+                  <span style={{ fontSize: 12, color: '#999' }}>Non débloqué</span>
+                )}
+                {isAdmin && (
+                  <button
+                    onClick={() => openEditor(b.key, selectedTeam)}
+                    style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 14, padding: 0 }}
+                    aria-label="Modifier le badge"
+                  >
+                    ✏️
+                  </button>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
 
       <p style={{ fontSize: 12, color: '#999', marginTop: 8 }}>
         Buts marqués cette saison — Noir : {computed.totalGoalsNoir} · Blanc : {computed.totalGoalsBlanc}
