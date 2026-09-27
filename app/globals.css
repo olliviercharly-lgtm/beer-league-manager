@@ -92,3 +92,12 @@ html, body {
     display: block;
   }
 }
+
+.blm-nav-links {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.blm-nav-links::-webkit-scrollbar {
+  display: none;
+}

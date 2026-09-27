@@ -67,108 +67,134 @@ export default function NavBar() {
   return (
     <nav
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 20,
-        padding: '10px 20px',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
         background: CLUB_BLUE,
         borderBottomLeftRadius: 16,
         borderBottomRightRadius: 16,
         boxShadow: '0 2px 10px rgba(0,0,0,0.15)',
         marginBottom: 24,
-        flexWrap: 'wrap',
       }}
     >
-      <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-        <Image src="/logo.png" alt="Beer League Manager" width={36} height={44} style={{ objectFit: 'contain' }} />
-        <span style={{ color: '#fff', fontWeight: 'bold', fontSize: 17, whiteSpace: 'nowrap' }}>
-          Beer League Manager
-        </span>
-      </Link>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          padding: '10px 16px 6px',
+        }}
+      >
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', minWidth: 0 }}>
+          <Image src="/logo.png" alt="Beer League Manager" width={32} height={40} style={{ objectFit: 'contain', flexShrink: 0 }} />
+          <span
+            style={{
+              color: '#fff',
+              fontWeight: 'bold',
+              fontSize: 16,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            Beer League Manager
+          </span>
+        </Link>
 
-      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+        <div ref={menuRef} style={{ position: 'relative', flexShrink: 0 }}>
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label="Paramètres du compte"
+            style={{
+              background: 'rgba(255,255,255,0.1)',
+              border: '1px solid rgba(255,255,255,0.4)',
+              color: '#fff',
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 18,
+              padding: 0,
+            }}
+          >
+            ⚙️
+          </button>
+
+          {menuOpen && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 44,
+                right: 0,
+                background: '#fff',
+                borderRadius: 12,
+                boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+                minWidth: 200,
+                overflow: 'hidden',
+                zIndex: 50,
+              }}
+            >
+              <button
+                onClick={handleEditProfile}
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  textAlign: 'left',
+                  padding: '12px 16px',
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: '1px solid #eee',
+                  cursor: 'pointer',
+                  fontSize: 14,
+                  color: '#222',
+                }}
+              >
+                👤 Modifier mon profil
+              </button>
+              <button
+                onClick={handleLogout}
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  textAlign: 'left',
+                  padding: '12px 16px',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: 14,
+                  color: '#B23A2E',
+                }}
+              >
+                🚪 Se déconnecter
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div
+        className="blm-nav-links"
+        style={{
+          display: 'flex',
+          gap: 14,
+          overflowX: 'auto',
+          whiteSpace: 'nowrap',
+          padding: '0 16px 10px',
+        }}
+      >
         {LINKS.slice(1).map((link) => (
           <Link
             key={link.href}
             href={link.href}
-            style={{ color: '#fff', textDecoration: 'none', fontSize: 15, opacity: 0.9 }}
+            style={{ color: '#fff', textDecoration: 'none', fontSize: 14, opacity: 0.9, flexShrink: 0 }}
           >
             {link.label}
           </Link>
         ))}
-      </div>
-
-      <div ref={menuRef} style={{ marginLeft: 'auto', position: 'relative' }}>
-        <button
-          onClick={() => setMenuOpen((v) => !v)}
-          aria-label="Paramètres du compte"
-          style={{
-            background: 'rgba(255,255,255,0.1)',
-            border: '1px solid rgba(255,255,255,0.4)',
-            color: '#fff',
-            width: 36,
-            height: 36,
-            borderRadius: '50%',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 18,
-            padding: 0,
-          }}
-        >
-          ⚙️
-        </button>
-
-        {menuOpen && (
-          <div
-            style={{
-              position: 'absolute',
-              top: 44,
-              right: 0,
-              background: '#fff',
-              borderRadius: 12,
-              boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
-              minWidth: 200,
-              overflow: 'hidden',
-              zIndex: 50,
-            }}
-          >
-            <button
-              onClick={handleEditProfile}
-              style={{
-                display: 'block',
-                width: '100%',
-                textAlign: 'left',
-                padding: '12px 16px',
-                background: 'none',
-                border: 'none',
-                borderBottom: '1px solid #eee',
-                cursor: 'pointer',
-                fontSize: 14,
-                color: '#222',
-              }}
-            >
-              👤 Modifier mon profil
-            </button>
-            <button
-              onClick={handleLogout}
-              style={{
-                display: 'block',
-                width: '100%',
-                textAlign: 'left',
-                padding: '12px 16px',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: 14,
-                color: '#B23A2E',
-              }}
-            >
-              🚪 Se déconnecter
-            </button>
-          </div>
-        )}
       </div>
     </nav>
   )
