@@ -47,6 +47,12 @@ function dayCountdown(dateStr: string) {
   return `J-${days}`
 }
 
+function toDatetimeLocalValue(iso: string) {
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 export default function CalendarPage() {
   const supabase = createClient()
   const [me, setMe] = useState<Player | null>(null)
@@ -57,6 +63,9 @@ export default function CalendarPage() {
   const [newLocation, setNewLocation] = useState('')
   const [expandedTrainings, setExpandedTrainings] = useState<string[] | null>(null)
   const [expandedBlocks, setExpandedBlocks] = useState<Record<string, boolean>>({})
+  const [editingTrainingId, setEditingTrainingId] = useState<string | null>(null)
+  const [editDate, setEditDate] = useState('')
+  const [editLocation, setEditLocation] = useState('')
 
   async function loadAll() {
     const { data: { user } } = await supabase.auth.getUser()
@@ -127,6 +136,45 @@ export default function CalendarPage() {
 
   function toggleBlock(key: string) {
     setExpandedBlocks((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  function handleStartEditTraining(training: Training) {
+    setEditingTrainingId(training.id)
+    setEditDate(toDatetimeLocalValue(training.date_time))
+    setEditLocation(training.location)
+  }
+
+  function handleCancelEditTraining() {
+    setEditingTrainingId(null)
+    setEditDate('')
+    setEditLocation('')
+  }
+
+  async function handleSaveEditTraining(id: string) {
+    await supabase
+      .from('trainings')
+      .update({
+        date_time: new Date(editDate).toISOString(),
+        location: editLocation,
+      })
+      .eq('id', id)
+    setEditingTrainingId(null)
+    loadAll()
+  }
+
+  async function handleDeleteTraining(id: string) {
+    if (!confirm('Supprimer cet entraînement ? Les présences et résultats associés seront également supprimés. Cette action est irréversible.')) return
+    await supabase.from('attendance').delete().eq('training_id', id)
+    const { data: resultRows } = await supabase.from('results').select('id').eq('training_id', id)
+    const resultIds = (resultRows || []).map((r: { id: string }) => r.id)
+    if (resultIds.length > 0) {
+      await supabase.from('result_challenges').delete().in('result_id', resultIds)
+      await supabase.from('highlights').delete().in('result_id', resultIds)
+      await supabase.from('results').delete().in('id', resultIds)
+    }
+    await supabase.from('trainings').delete().eq('id', id)
+    setEditingTrainingId(null)
+    loadAll()
   }
 
   if (loading) return <p style={{ padding: 40 }}>Chargement...</p>
@@ -233,6 +281,54 @@ export default function CalendarPage() {
                   {isExpanded ? '▲' : '▼'}
                 </button>
               </div>
+
+              {isAdmin && editingTrainingId !== training.id && (
+                <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleStartEditTraining(training) }}
+                    style={{ background: 'none', border: 'none', color: CLUB_BLUE, cursor: 'pointer', fontSize: 12, padding: 0 }}
+                  >
+                    ✏️ Modifier
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDeleteTraining(training.id) }}
+                    style={{ background: 'none', border: 'none', color: '#B23A2E', cursor: 'pointer', fontSize: 12, padding: 0 }}
+                  >
+                    🗑️ Supprimer
+                  </button>
+                </div>
+              )}
+
+              {editingTrainingId === training.id && (
+                <div onClick={(e) => e.stopPropagation()} style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
+                  <input
+                    type="datetime-local"
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    style={{ padding: 8, border: '1px solid #ccc', borderRadius: 8 }}
+                  />
+                  <input
+                    value={editLocation}
+                    onChange={(e) => setEditLocation(e.target.value)}
+                    style={{ padding: 8, border: '1px solid #ccc', borderRadius: 8 }}
+                  />
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      onClick={handleCancelEditTraining}
+                      style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #ddd', background: '#fff', cursor: 'pointer' }}
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      onClick={() => handleSaveEditTraining(training.id)}
+                      className="blm-btn-primary"
+                      style={{ padding: '6px 14px' }}
+                    >
+                      Enregistrer
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {!isExpanded && (
                 <div style={{ marginTop: 12, fontSize: 14, color: '#333', display: 'flex', alignItems: 'center', gap: 10 }}>
