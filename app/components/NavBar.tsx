@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { isRealAdmin, getPreviewPlayer, setPreviewPlayer } from '@/lib/viewRole'
+import { isRealAdmin, effectiveIsAdmin, getPreviewPlayer, setPreviewPlayer } from '@/lib/viewRole'
 
 const CLUB_BLUE = '#003F6E'
 
@@ -75,6 +75,11 @@ export default function NavBar() {
     setPreviewPlayer(view === 'joueur')
     setMenuOpen(false)
     window.location.reload()
+  }
+
+  function handleGoToLeague() {
+    setMenuOpen(false)
+    router.push('/parametres')
   }
 
   return (
@@ -176,6 +181,25 @@ export default function NavBar() {
                     Vue admin
                   </button>
                 </div>
+              )}
+              {effectiveIsAdmin(myRole) && (
+                <button
+                  onClick={handleGoToLeague}
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    textAlign: 'left',
+                    padding: '12px 16px',
+                    background: 'none',
+                    border: 'none',
+                    borderBottom: '1px solid #eee',
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    color: '#222',
+                  }}
+                >
+                  🏆 Gérer la ligue
+                </button>
               )}
               <button
                 onClick={handleEditProfile}

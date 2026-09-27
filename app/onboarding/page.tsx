@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 
-export default function OnboardingPage() {
+function OnboardingForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [inviteCode, setInviteCode] = useState('')
   const [firstName, setFirstName] = useState('')
@@ -14,6 +15,14 @@ export default function OnboardingPage() {
   const [number, setNumber] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const codeFromLink = searchParams.get('code')
+    if (codeFromLink) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setInviteCode(codeFromLink)
+    }
+  }, [searchParams])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -96,5 +105,13 @@ export default function OnboardingPage() {
         </button>
       </form>
     </div>
+  )
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: 40 }}>Chargement...</div>}>
+      <OnboardingForm />
+    </Suspense>
   )
 }
