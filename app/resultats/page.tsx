@@ -151,10 +151,36 @@ export default function ResultatsPage() {
 
         {results.length > 0 && (
           <div className="blm-card" style={{ marginBottom: 24 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 6 }}>
-              <span>Noir — {seasonStats.winsNoir} victoire(s) ({seasonStats.goalsNoir}b)</span>
-              <span>Blanc — {seasonStats.winsBlanc} victoire(s) ({seasonStats.goalsBlanc}b)</span>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                gap: 12,
+                marginBottom: 16,
+              }}
+            >
+              {[
+                { label: 'Victoires Noir', value: seasonStats.winsNoir },
+                { label: 'Victoires Blanc', value: seasonStats.winsBlanc },
+                { label: 'Buts Noir', value: seasonStats.goalsNoir },
+                { label: 'Buts Blanc', value: seasonStats.goalsBlanc },
+              ].map((s) => (
+                <div
+                  key={s.label}
+                  style={{
+                    background: '#F5F7FA',
+                    border: '1px solid #E3E8EF',
+                    borderRadius: 10,
+                    padding: 14,
+                    textAlign: 'left',
+                  }}
+                >
+                  <div style={{ fontSize: 28, fontWeight: 700, color: CLUB_BLUE }}>{s.value}</div>
+                  <div style={{ fontSize: 12, color: '#666' }}>{s.label}</div>
+                </div>
+              ))}
             </div>
+
             <div style={{ display: 'flex', height: 10, borderRadius: 6, overflow: 'hidden', marginBottom: 16 }}>
               <div style={{ width: `${seasonStats.pctNoir}%`, background: '#111' }} />
               <div style={{ width: `${100 - seasonStats.pctNoir}%`, background: '#ccc' }} />
@@ -205,19 +231,25 @@ export default function ResultatsPage() {
             const matchChallenges = resultChallenges.filter((rc) => rc.result_id === result.id)
 
             return (
-              <div key={training.id} className="blm-card" style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>
+              <div
+                key={training.id}
+                className="blm-card"
+                style={{ marginBottom: 16, borderTop: `4px solid ${CLUB_BLUE}`, paddingTop: 14 }}
+              >
+                <div style={{ fontSize: 13, color: '#666', marginBottom: 10 }}>
                   {new Date(training.date_time).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} · {training.location}
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                  <span style={{ background: '#111', color: '#fff', borderRadius: 8, padding: '6px 14px', fontWeight: 'bold', fontSize: 18 }}>
-                    {result.score_noir}
-                  </span>
-                  <span style={{ color: '#999' }}>-</span>
-                  <span style={{ background: '#fff', color: '#111', border: '1px solid #111', borderRadius: 8, padding: '6px 14px', fontWeight: 'bold', fontSize: 18 }}>
-                    {result.score_blanc}
-                  </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                  <div style={{ flex: 1, textAlign: 'center', padding: '10px 0', borderRadius: 8, background: '#1A1A1A', color: '#fff' }}>
+                    <div style={{ fontSize: 22, fontWeight: 700 }}>{result.score_noir}</div>
+                    <div style={{ fontSize: 11, letterSpacing: 0.5, opacity: 0.8 }}>NOIR</div>
+                  </div>
+                  <span style={{ color: '#999', fontSize: 13 }}>vs</span>
+                  <div style={{ flex: 1, textAlign: 'center', padding: '10px 0', borderRadius: 8, background: '#fff', color: '#1A1A1A', border: '1px solid #1A1A1A' }}>
+                    <div style={{ fontSize: 22, fontWeight: 700 }}>{result.score_blanc}</div>
+                    <div style={{ fontSize: 11, letterSpacing: 0.5, opacity: 0.6 }}>BLANC</div>
+                  </div>
                 </div>
 
                 {matchHighlights.length > 0 && (
