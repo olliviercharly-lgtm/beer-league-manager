@@ -28,6 +28,7 @@ type AttendanceRow = {
   training_id: string
   player_id: string
   status: string
+  team: string | null
   players: { first_name: string; last_name: string; team: string; position: string | null } | null
 }
 
@@ -53,6 +54,29 @@ function toDatetimeLocalValue(iso: string) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
+function effectiveTeam(r: AttendanceRow) {
+  return r.team ?? r.players?.team ?? 'noir'
+}
+
+function positionLetter(pos: string | undefined | null) {
+  if (pos === 'attaquant') return 'A'
+  if (pos === 'defenseur') return 'D'
+  if (pos === 'gardien') return 'G'
+  return '?'
+}
+
+function positionStyle(pos: string | undefined | null) {
+  if (pos === 'attaquant') return { bg: '#FBF3DD', color: CLUB_GOLD }
+  if (pos === 'defenseur') return { bg: '#EAF1F7', color: CLUB_BLUE }
+  return { bg: '#EDEFF3', color: '#6B7688' }
+}
+
+function nextPosition(pos: string) {
+  if (pos === 'attaquant') return 'defenseur'
+  if (pos === 'defenseur') return 'attaquant'
+  return pos
+}
+
 export default function CalendarPage() {
   const supabase = createClient()
   const [me, setMe] = useState<Player | null>(null)
@@ -66,6 +90,7 @@ export default function CalendarPage() {
   const [editingTrainingId, setEditingTrainingId] = useState<string | null>(null)
   const [editDate, setEditDate] = useState('')
   const [editLocation, setEditLocation] = useState('')
+  const [positionOverrides, setPositionOverrides] = useState<Record<string, string>>({})
 
   async function loadAll() {
     const { data: { user } } = await supabase.auth.getUser()
@@ -94,9 +119,10 @@ export default function CalendarPage() {
 
     const { data: attendanceData } = await supabase
       .from('attendance')
-      .select('id, training_id, player_id, status, players(first_name, last_name, team, position)')
+      .select('id, training_id, player_id, status, team, players(first_name, last_name, team, position)')
 
     setAttendance((attendanceData as unknown as AttendanceRow[]) || [])
+    setPositionOverrides({})
     setLoading(false)
   }
 
@@ -104,6 +130,60 @@ export default function CalendarPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadAll()
   }, [])
+
+  function effectivePosition(r: AttendanceRow) {
+    return positionOverrides[r.id] ?? r.players?.position ?? 'attaquant'
+  }
+
+  function handleChangePosition(r: AttendanceRow) {
+    const current = effectivePosition(r)
+    if (current === 'gardien') return
+    setPositionOverrides((prev) => ({ ...prev, [r.id]: nextPosition(current) }))
+  }
+
+  async function handleTransferTeam(r: AttendanceRow, targetTeam: string) {
+    await supabase.from('attendance').update({ team: targetTeam }).eq('id', r.id)
+    loadAll()
+  }
+
+  async function handleBalanceTeams(presentRows: AttendanceRow[]) {
+    type Item = { id: string; team: string; position: string }
+    const items: Item[] = presentRows.map((r) => ({ id: r.id, team: effectiveTeam(r), position: effectivePosition(r) }))
+    const updates: { id: string; team: string }[] = []
+    let guard = 0
+
+    while (guard < 20) {
+      guard++
+      const noir = items.filter((i) => i.team === 'noir')
+      const blanc = items.filter((i) => i.team === 'blanc')
+      const diff = noir.length - blanc.length
+      if (Math.abs(diff) <= 1) break
+
+      const largerTeam = diff > 0 ? 'noir' : 'blanc'
+      const smallerTeam = diff > 0 ? 'blanc' : 'noir'
+      const larger = diff > 0 ? noir : blanc
+      const smaller = diff > 0 ? blanc : noir
+
+      const largerA = larger.filter((i) => i.position === 'attaquant').length
+      const largerD = larger.filter((i) => i.position === 'defenseur').length
+      const smallerA = smaller.filter((i) => i.position === 'attaquant').length
+      const smallerD = smaller.filter((i) => i.position === 'defenseur').length
+      const preferred = (largerA - smallerA) >= (largerD - smallerD) ? 'attaquant' : 'defenseur'
+
+      let candidate = larger.find((i) => i.position === preferred)
+      if (!candidate) candidate = larger.find((i) => i.position !== 'gardien')
+      if (!candidate) candidate = larger[0]
+      if (!candidate) break
+
+      candidate.team = smallerTeam
+      updates.push({ id: candidate.id, team: smallerTeam })
+      void largerTeam
+    }
+
+    if (updates.length === 0) return
+    await Promise.all(updates.map((u) => supabase.from('attendance').update({ team: u.team }).eq('id', u.id)))
+    loadAll()
+  }
 
   async function setMyStatus(trainingId: string, status: string) {
     if (!me) return
@@ -255,11 +335,11 @@ export default function CalendarPage() {
           const presents = rows.filter((r) => r.status === 'present')
           const forfaits = rows.filter((r) => r.status === 'forfait')
           const myRow = rows.find((r) => r.player_id === me?.id)
-          const blancs = presents.filter((r) => r.players?.team === 'blanc')
-          const noirs = presents.filter((r) => r.players?.team === 'noir')
-          const countPos = (arr: AttendanceRow[], pos: string) => arr.filter((r) => r.players?.position === pos).length
-          const totalA = presents.filter((r) => r.players?.position === 'attaquant').length
-          const totalD = presents.filter((r) => r.players?.position === 'defenseur').length
+          const blancs = presents.filter((r) => effectiveTeam(r) === 'blanc')
+          const noirs = presents.filter((r) => effectiveTeam(r) === 'noir')
+          const countPos = (arr: AttendanceRow[], pos: string) => arr.filter((r) => effectivePosition(r) === pos).length
+          const totalA = presents.filter((r) => effectivePosition(r) === 'attaquant').length
+          const totalD = presents.filter((r) => effectivePosition(r) === 'defenseur').length
           const isExpanded = (expandedTrainings || []).includes(training.id)
           const pill = statusPill(myRow?.status)
 
@@ -374,24 +454,27 @@ export default function CalendarPage() {
                   </div>
 
                   {[
-                    { key: 'blanc', label: 'Blancs', rows: blancs, dot: <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#fff', border: '2px solid #1A1A1A', display: 'inline-block' }} /> },
-                    { key: 'noir', label: 'Noirs', rows: noirs, dot: <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#1A1A1A', display: 'inline-block' }} /> },
-                    { key: 'forfaits', label: 'Forfaits', rows: forfaits, dot: <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#B23A2E', display: 'inline-block' }} /> },
+                    { key: 'blanc', label: 'Blancs', rows: blancs, other: 'noir', otherLabel: 'Noir', dot: <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#fff', border: '2px solid #1A1A1A', display: 'inline-block' }} /> },
+                    { key: 'noir', label: 'Noirs', rows: noirs, other: 'blanc', otherLabel: 'Blanc', dot: <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#1A1A1A', display: 'inline-block' }} /> },
+                    { key: 'forfaits', label: 'Forfaits', rows: forfaits, other: null, otherLabel: null, dot: <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#B23A2E', display: 'inline-block' }} /> },
                   ].map((block) => {
                     const blockKey = `${training.id}:${block.key}`
                     const blockExpanded = !!expandedBlocks[blockKey]
                     const countLabel = block.key === 'forfaits'
                       ? `${block.rows.length} forfait${block.rows.length > 1 ? 's' : ''}`
                       : `${block.rows.length} (${countPos(block.rows, 'attaquant')}A / ${countPos(block.rows, 'defenseur')}D)`
+                    const blockA = countPos(block.rows, 'attaquant')
+                    const blockD = countPos(block.rows, 'defenseur')
+                    const blockG = countPos(block.rows, 'gardien')
 
                     return (
-                      <div key={block.key} className="blm-subcard" style={{ marginBottom: 10, cursor: 'pointer' }} onClick={() => toggleBlock(blockKey)}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div key={block.key} className="blm-subcard" style={{ marginBottom: 10 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => toggleBlock(blockKey)}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             {block.dot}
                             <div>
                               <div style={{ fontWeight: 'bold' }}>{block.label}</div>
-                              <div style={{ fontSize: 12, color: '#888' }}>Cliquer pour déplier</div>
+                              <div style={{ fontSize: 12, color: '#888' }}>{blockExpanded ? 'Cliquer pour replier' : 'Cliquer pour déplier'}</div>
                             </div>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -403,17 +486,53 @@ export default function CalendarPage() {
                           <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #eee' }}>
                             {block.rows.length === 0 ? (
                               <div style={{ fontSize: 13, color: '#999' }}>Aucun joueur</div>
-                            ) : (
+                            ) : block.key === 'forfaits' ? (
                               block.rows.map((r) => (
                                 <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 14 }}>
                                   <span>{r.players?.first_name} {r.players?.last_name}</span>
-                                  {r.players?.position && (
-                                    <span style={{ color: '#888', fontSize: 12 }}>
-                                      {r.players.position === 'attaquant' ? 'Attaquant' : r.players.position === 'defenseur' ? 'Défenseur' : 'Gardien'}
-                                    </span>
-                                  )}
                                 </div>
                               ))
+                            ) : (
+                              <>
+                                <div style={{ fontSize: 12.5, color: '#666', marginBottom: 10 }}>
+                                  Effectif {block.label}{' '}
+                                  {blockA > 0 && <><strong>{blockA} Attaquant{blockA > 1 ? 's' : ''}</strong>{(blockD > 0 || blockG > 0) ? ' • ' : ''}</>}
+                                  {blockD > 0 && <><strong>{blockD} Défenseur{blockD > 1 ? 's' : ''}</strong>{blockG > 0 ? ' • ' : ''}</>}
+                                  {blockG > 0 && <strong>{blockG} Gardien{blockG > 1 ? 's' : ''}</strong>}
+                                </div>
+                                {block.rows.map((r) => {
+                                  const pos = effectivePosition(r)
+                                  const style = positionStyle(pos)
+                                  return (
+                                    <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', borderBottom: '1px solid #eee' }}>
+                                      <button
+                                        onClick={() => handleChangePosition(r)}
+                                        title={pos !== 'gardien' ? 'Changer le poste (ce match uniquement)' : undefined}
+                                        style={{
+                                          width: 26, height: 26, borderRadius: '50%', border: 'none', flexShrink: 0,
+                                          background: style.bg, color: style.color, fontWeight: 800, fontSize: 12,
+                                          cursor: pos !== 'gardien' ? 'pointer' : 'default',
+                                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        }}
+                                      >
+                                        {positionLetter(pos)}
+                                      </button>
+                                      <span style={{ flex: 1, fontWeight: 600, fontSize: 14.5 }}>
+                                        {r.players?.first_name} {r.players?.last_name}
+                                      </span>
+                                      <button
+                                        onClick={() => handleTransferTeam(r, block.other as string)}
+                                        style={{
+                                          background: CLUB_BLUE, color: '#fff', border: 'none', borderRadius: 20,
+                                          padding: '6px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+                                        }}
+                                      >
+                                        ⇄ → {block.otherLabel}
+                                      </button>
+                                    </div>
+                                  )
+                                })}
+                              </>
                             )}
                           </div>
                         )}
@@ -421,12 +540,23 @@ export default function CalendarPage() {
                     )
                   })}
 
-                  <div style={{ marginTop: 14, fontSize: 14 }}>
+                  <div style={{ marginTop: 14, fontSize: 14, textAlign: 'center' }}>
                     <strong>{presents.length}</strong> joueurs présents ({totalA}A / {totalD}D)
                     {forfaits.length > 0 && (
                       <> · <span style={{ color: '#B23A2E' }}>{forfaits.length} forfait{forfaits.length > 1 ? 's' : ''}</span></>
                     )}
                   </div>
+
+                  <button
+                    onClick={() => handleBalanceTeams(presents)}
+                    style={{
+                      width: '100%', marginTop: 12, padding: '12px', borderRadius: 12,
+                      border: `1.5px solid ${CLUB_BLUE}`, background: 'transparent', color: CLUB_BLUE,
+                      fontWeight: 700, fontSize: 14.5, cursor: 'pointer',
+                    }}
+                  >
+                    ⇄ Équilibrer Noirs/Blancs
+                  </button>
                 </>
               )}
             </div>
