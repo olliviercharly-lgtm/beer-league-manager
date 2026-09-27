@@ -190,7 +190,7 @@ export default function DefisTab({ onTotals }: { onTotals?: (t: { noir: number; 
     loadAll()
   }
 
-  async function handleVote(challengeId: string, voteValue: 'pour' | 'contre') {
+  async function handleVote(challengeId: string, voteValue: 'for' | 'against') {
     if (!me) return
     const existing = votes.find((v) => v.challenge_id === challengeId && v.player_id === me.id)
     let error = null
@@ -298,7 +298,7 @@ export default function DefisTab({ onTotals }: { onTotals?: (t: { noir: number; 
             <h2 style={{ fontSize: 18, marginBottom: 12 }}>Défis proposés — à voter</h2>
             {proposedChallenges.map((c) => {
               const challengeVotes = votes.filter((v) => v.challenge_id === c.id)
-              const pourCount = challengeVotes.filter((v) => v.vote === 'pour').length
+              const pourCount = challengeVotes.filter((v) => v.vote === 'for').length
               const pct = challengeVotes.length > 0 ? Math.round((pourCount / challengeVotes.length) * 100) : 0
               const myVote = challengeVotes.find((v) => v.player_id === me?.id)
 
@@ -324,25 +324,25 @@ export default function DefisTab({ onTotals }: { onTotals?: (t: { noir: number; 
 
                   <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
                     <button
-                      onClick={() => handleVote(c.id, 'pour')}
+                      onClick={() => handleVote(c.id, 'for')}
                       style={{
                         flex: 1, padding: '14px 12px', borderRadius: 12, cursor: 'pointer',
-                        fontSize: 15, fontWeight: myVote?.vote === 'pour' ? 700 : 500,
-                        border: myVote?.vote === 'pour' ? '1.5px solid #2E7D5B' : '1.5px solid #ddd',
-                        background: myVote?.vote === 'pour' ? '#DFF3E7' : '#fff',
-                        color: myVote?.vote === 'pour' ? '#1F6B45' : '#555',
+                        fontSize: 15, fontWeight: myVote?.vote === 'for' ? 700 : 500,
+                        border: myVote?.vote === 'for' ? '1.5px solid #2E7D5B' : '1.5px solid #ddd',
+                        background: myVote?.vote === 'for' ? '#DFF3E7' : '#fff',
+                        color: myVote?.vote === 'for' ? '#1F6B45' : '#555',
                       }}
                     >
                       👍 Pour
                     </button>
                     <button
-                      onClick={() => handleVote(c.id, 'contre')}
+                      onClick={() => handleVote(c.id, 'against')}
                       style={{
                         flex: 1, padding: '14px 12px', borderRadius: 12, cursor: 'pointer',
-                        fontSize: 15, fontWeight: myVote?.vote === 'contre' ? 700 : 500,
-                        border: myVote?.vote === 'contre' ? '1.5px solid #B23A2E' : '1.5px solid #ddd',
-                        background: myVote?.vote === 'contre' ? '#FBE4E1' : '#fff',
-                        color: myVote?.vote === 'contre' ? '#B23A2E' : '#555',
+                        fontSize: 15, fontWeight: myVote?.vote === 'against' ? 700 : 500,
+                        border: myVote?.vote === 'against' ? '1.5px solid #B23A2E' : '1.5px solid #ddd',
+                        background: myVote?.vote === 'against' ? '#FBE4E1' : '#fff',
+                        color: myVote?.vote === 'against' ? '#B23A2E' : '#555',
                       }}
                     >
                       👎 Contre
