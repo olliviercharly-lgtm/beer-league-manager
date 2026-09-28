@@ -40,14 +40,14 @@ function statusPill(status: string | undefined) {
   return { text: 'En attente', bg: '#EFEFEF', color: '#666' }
 }
 
-function dayCountdown(dateStr: string) {
+function countdownParts(dateStr: string) {
   const now = new Date()
   const target = new Date(dateStr)
   const diffMs = target.setHours(0, 0, 0, 0) - now.setHours(0, 0, 0, 0)
   const days = Math.round(diffMs / 86400000)
-  if (days <= 0) return 'J-0 (aujourd\'hui)'
-  if (days === 1) return 'J-1 (demain)'
-  return `J-${days}`
+  if (days <= 0) return { big: 'J-0', small: "aujourd'hui" }
+  if (days === 1) return { big: 'J-1', small: 'demain' }
+  return { big: `J-${days}`, small: 'jours' }
 }
 
 function toDatetimeLocalValue(iso: string) {
@@ -230,33 +230,57 @@ export default function CalendarPage() {
     <div>
       <NavBar />
 
-      <div style={{ background: '#EAF0F6', padding: '28px 16px 36px', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ maxWidth: 720, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+      <div style={{ background: `linear-gradient(135deg, ${CLUB_BLUE} 0%, #001F37 100%)`, padding: '32px 20px', position: 'relative', overflow: 'hidden' }}>
+        <div
+          style={{
+            maxWidth: 720, margin: '0 auto', position: 'relative', zIndex: 1,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap',
+          }}
+        >
           {nextTraining ? (
             <>
-              <div style={{ fontSize: 28, fontWeight: 'bold', color: '#1A1A1A', marginBottom: 6 }}>
-                {new Date(nextTraining.date_time).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11.5, fontWeight: 700, letterSpacing: 1.2, marginBottom: 8, textTransform: 'uppercase' }}>
+                  Prochain entraînement
+                </div>
+                <div style={{ fontSize: 24, fontWeight: 'bold', color: '#fff', marginBottom: 6, textTransform: 'capitalize' }}>
+                  {new Date(nextTraining.date_time).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                </div>
+                <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14.5 }}>
+                  🕒 {new Date(nextTraining.date_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                  <span style={{ opacity: 0.5, margin: '0 8px' }}>·</span>
+                  📍 {nextTraining.location}
+                </div>
               </div>
-              <div style={{ color: '#555', marginBottom: 16, fontSize: 15 }}>
-                {new Date(nextTraining.date_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · {nextTraining.location}
+
+              <div
+                style={{
+                  width: 84, height: 84, borderRadius: '50%', background: CLUB_GOLD,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 6px 18px rgba(0,0,0,0.3)', flexShrink: 0,
+                }}
+              >
+                <div style={{ fontSize: 21, fontWeight: 900, color: '#1A1A1A', lineHeight: 1 }}>
+                  {countdownParts(nextTraining.date_time).big}
+                </div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#1A1A1A', letterSpacing: 0.4, marginTop: 3, textTransform: 'uppercase' }}>
+                  {countdownParts(nextTraining.date_time).small}
+                </div>
               </div>
-              <span style={{ background: CLUB_GOLD, color: '#1A1A1A', fontWeight: 'bold', padding: '7px 16px', borderRadius: 10, display: 'inline-block', fontSize: 14 }}>
-                {dayCountdown(nextTraining.date_time)}
-              </span>
             </>
           ) : (
-            <div style={{ fontSize: 18, color: '#555' }}>Aucun entraînement à venir</div>
+            <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.85)' }}>Aucun entraînement à venir</div>
           )}
         </div>
 
         <svg
           className="blm-hero-rink"
-          width="160" height="160" viewBox="0 0 160 160"
-          style={{ position: 'absolute', right: 24, top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }}
+          width="220" height="220" viewBox="0 0 160 160"
+          style={{ position: 'absolute', right: -30, top: '50%', transform: 'translateY(-50%)', opacity: 0.12 }}
         >
-          <circle cx="80" cy="80" r="70" fill="none" stroke={CLUB_BLUE} strokeWidth="2" />
-          <circle cx="112" cy="80" r="6" fill={CLUB_GOLD} />
-          <line x1="80" y1="10" x2="80" y2="150" stroke={CLUB_BLUE} strokeWidth="2" />
+          <circle cx="80" cy="80" r="70" fill="none" stroke="#fff" strokeWidth="2" />
+          <circle cx="112" cy="80" r="6" fill="#fff" />
+          <line x1="80" y1="10" x2="80" y2="150" stroke="#fff" strokeWidth="2" />
         </svg>
       </div>
 
