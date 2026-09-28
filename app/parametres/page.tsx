@@ -133,7 +133,7 @@ export default function ParametresPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const inviteLink = origin && inviteCode ? `${origin}/onboarding?code=${encodeURIComponent(inviteCode)}` : ''
+  const inviteLink = origin && inviteCode ? `${origin}/onboarding?invite=${encodeURIComponent(inviteCode)}` : ''
   const whatsappMessage = `Rejoins notre ligue "${name}" sur Beer League Manager : ${inviteLink}`
   const whatsappHref = `https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`
 

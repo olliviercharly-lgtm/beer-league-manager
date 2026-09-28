@@ -1,14 +1,15 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 
 const CLUB_BLUE = '#003F6E'
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
 
   const [mode, setMode] = useState<'login' | 'signup'>('login')
@@ -18,6 +19,16 @@ export default function LoginPage() {
   const [success, setSuccess] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
+  const invite = searchParams.get('invite')
+  const next = searchParams.get('next')
+
+  useEffect(() => {
+    if (invite) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setMode('signup')
+    }
+  }, [invite])
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
@@ -25,13 +36,19 @@ export default function LoginPage() {
     setLoading(true)
 
     if (mode === 'signup') {
-      const { error } = await supabase.auth.signUp({ email, password })
+      const onboardingPath = `/onboarding${invite ? `?invite=${encodeURIComponent(invite)}` : ''}`
+      const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(onboardingPath)}`
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: callbackUrl },
+      })
       if (error) {
         setError(error.message)
         setLoading(false)
         return
       }
-      setSuccess('Compte créé ! Vérifie ta boîte mail pour confirmer, puis connecte-toi.')
+      setSuccess('Compte créé ! Vérifie ta boîte mail pour confirmer, tu seras redirigé automatiquement.')
       setMode('login')
       setLoading(false)
       return
@@ -44,7 +61,7 @@ export default function LoginPage() {
       return
     }
 
-    router.push('/')
+    router.push(next || '/')
     router.refresh()
   }
 
@@ -58,6 +75,12 @@ export default function LoginPage() {
         <div style={{ color: '#666', fontSize: 14, marginBottom: 24 }}>
           {mode === 'login' ? 'Connecte-toi pour accéder à ton équipe' : 'Crée ton compte pour rejoindre l\'équipe'}
         </div>
+
+        {invite && mode === 'signup' && (
+          <div style={{ background: '#EAF2FA', color: CLUB_BLUE, fontSize: 13, borderRadius: 8, padding: 8, marginBottom: 16 }}>
+            Tu rejoins la ligue via un lien d&apos;invitation
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12, textAlign: 'left' }}>
           <input
@@ -97,5 +120,13 @@ export default function LoginPage() {
         </button>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh' }} />}>
+      <LoginForm />
+    </Suspense>
   )
 }
