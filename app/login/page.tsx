@@ -15,6 +15,7 @@ function LoginForm() {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -36,6 +37,12 @@ function LoginForm() {
     setLoading(true)
 
     if (mode === 'signup') {
+      if (password !== confirmPassword) {
+        setError('Les mots de passe ne correspondent pas.')
+        setLoading(false)
+        return
+      }
+
       const onboardingPath = `/onboarding${invite ? `?invite=${encodeURIComponent(invite)}` : ''}`
       const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(onboardingPath)}`
       const { error } = await supabase.auth.signUp({
@@ -50,6 +57,8 @@ function LoginForm() {
       }
       setSuccess('Compte créé ! Vérifie ta boîte mail pour confirmer, tu seras redirigé automatiquement.')
       setMode('login')
+      setPassword('')
+      setConfirmPassword('')
       setLoading(false)
       return
     }
@@ -100,6 +109,17 @@ function LoginForm() {
             minLength={6}
             style={{ padding: 10, border: '1px solid #ddd', borderRadius: 10, fontSize: 15 }}
           />
+          {mode === 'signup' && (
+            <input
+              type="password"
+              placeholder="Confirme ton mot de passe"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              minLength={6}
+              style={{ padding: 10, border: '1px solid #ddd', borderRadius: 10, fontSize: 15 }}
+            />
+          )}
           {error && <p style={{ color: '#B23A2E', fontSize: 13, margin: 0 }}>{error}</p>}
           {success && <p style={{ color: '#2E7D5B', fontSize: 13, margin: 0 }}>{success}</p>}
           <button
