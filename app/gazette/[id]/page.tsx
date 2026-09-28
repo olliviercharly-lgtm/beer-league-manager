@@ -61,7 +61,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
           <div style={{ fontSize: 13, color: '#666', marginBottom: 16 }}>
             Par {authorName} · {new Date(article.created_at).toLocaleDateString('fr-FR')}
           </div>
-          {lines.map((para, i) => (
+          {lines.map((para: string, i: number) => (
             <p key={i} style={{ marginBottom: 12, lineHeight: 1.5 }}>{para}</p>
           ))}
           <div style={{ marginTop: 16 }}>
