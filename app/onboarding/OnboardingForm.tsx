@@ -8,7 +8,15 @@ type CodeStatus = 'idle' | 'checking' | 'valid' | 'invalid'
 export default function OnboardingForm({ initialCode = '' }: { initialCode?: string }) {
   const router = useRouter()
 
-  const [inviteCode, setInviteCode] = useState(initialCode)
+  const [inviteCode, setInviteCode] = useState(() => {
+    if (initialCode) return initialCode
+    if (typeof window === 'undefined') return ''
+    try {
+      return localStorage.getItem('blm_invite_code') || ''
+    } catch {
+      return ''
+    }
+  })
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [team, setTeam] = useState('noir')
@@ -79,6 +87,12 @@ export default function OnboardingForm({ initialCode = '' }: { initialCode?: str
       setError(data.error || 'Une erreur est survenue.')
       setLoading(false)
       return
+    }
+
+    try {
+      localStorage.removeItem('blm_invite_code')
+    } catch {
+      // pas bloquant
     }
 
     router.push('/')

@@ -25,6 +25,11 @@ function LoginForm() {
 
   useEffect(() => {
     if (invite) {
+      try {
+        localStorage.setItem('blm_invite_code', invite)
+      } catch {
+        // navigation privée ou stockage désactivé : tant pis, pas bloquant
+      }
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setMode('signup')
     }
