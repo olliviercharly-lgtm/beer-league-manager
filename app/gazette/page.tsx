@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import ShareButton from '@/app/components/ShareButton'
 import NavBar from '@/app/components/NavBar'
 import { effectiveIsAdmin } from '@/lib/viewRole'
 
@@ -36,7 +38,6 @@ export default function GazettePage() {
   const [reactions, setReactions] = useState<Reaction[]>([])
   const [loading, setLoading] = useState(true)
   const [filterTheme, setFilterTheme] = useState<string>('all')
-  const [expandedIds, setExpandedIds] = useState<string[]>([])
 
   const [showForm, setShowForm] = useState(false)
   const [genTheme, setGenTheme] = useState('resume_match')
@@ -109,10 +110,6 @@ export default function GazettePage() {
 
   function themeLabel(theme: string) {
     return THEMES.find((t) => t.value === theme)?.label || theme
-  }
-
-  function toggleExpand(id: string) {
-    setExpandedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
   }
 
   function reactionsForArticle(articleId: string) {
@@ -359,8 +356,6 @@ export default function GazettePage() {
 
         {filteredArticles.map((article) => {
           const lines = article.body.split('\n').filter(Boolean)
-          const isExpanded = expandedIds.includes(article.id)
-          const visibleLines = isExpanded ? lines : lines.slice(0, 10)
           const canDelete = me && (me.id === article.author_id || effectiveIsAdmin(me.role))
 
           return (
@@ -371,18 +366,19 @@ export default function GazettePage() {
                 Par {playerName(article.author_id)} · {new Date(article.created_at).toLocaleDateString('fr-FR')}
               </div>
 
-              {visibleLines.map((para, i) => (
-                <p key={i} style={{ marginBottom: 12, lineHeight: 1.5 }}>{para}</p>
-              ))}
-
-              {lines.length > 10 && (
-                <button
-                  onClick={() => toggleExpand(article.id)}
-                  style={{ background: 'none', border: 'none', color: CLUB_BLUE, cursor: 'pointer', padding: 0, marginBottom: 12, fontWeight: 'bold' }}
-                >
-                  {isExpanded ? 'Voir moins' : 'Voir plus'}
-                </button>
-              )}
+              <div
+                style={{
+                  display: '-webkit-box',
+                  WebkitLineClamp: 5,
+                  WebkitBoxOrient: 'vertical' as const,
+                  overflow: 'hidden',
+                  marginBottom: 12,
+                }}
+              >
+                {lines.map((para, i) => (
+                  <p key={i} style={{ marginBottom: 12, lineHeight: 1.5 }}>{para}</p>
+                ))}
+              </div>
 
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
                 {EMOJIS.map((emoji) => {
@@ -404,6 +400,12 @@ export default function GazettePage() {
                     </button>
                   )
                 })}
+
+                <Link href={`/gazette/${article.id}`} className="blm-pill">
+                  Lire l&apos;article →
+                </Link>
+
+                <ShareButton title={article.title} path={`/gazette/${article.id}`} excerpt={lines[0]} />
 
                 {canDelete && (
                   <button
