@@ -261,11 +261,6 @@ export default function CalendarPage() {
       </div>
 
       <div style={{ maxWidth: 720, margin: '32px auto 40px', fontFamily: 'sans-serif', padding: '0 16px' }}>
-        <h1 style={{ marginBottom: 8, color: CLUB_BLUE, fontSize: 26 }}>Calendrier</h1>
-        <p style={{ color: '#666', marginBottom: 24 }}>
-          Indiquez votre présence — les compos s&apos;ajustent en fonction des réponses.
-        </p>
-
         {isAdmin && (
           <form
             onSubmit={createTraining}

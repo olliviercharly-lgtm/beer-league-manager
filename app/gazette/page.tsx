@@ -222,8 +222,6 @@ export default function GazettePage() {
     <div>
       <NavBar />
       <div style={{ maxWidth: 700, margin: '40px auto', fontFamily: 'sans-serif', padding: '0 16px' }}>
-        <h1 style={{ marginBottom: 16, color: CLUB_BLUE, fontSize: 26 }}>La Gazette</h1>
-
         <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
           <button
             onClick={() => setFilterTheme('all')}

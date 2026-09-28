@@ -131,8 +131,6 @@ function VestiaireContent() {
     <div>
       <NavBar />
       <div style={{ maxWidth: 900, margin: '40px auto', fontFamily: 'sans-serif', padding: '0 16px' }}>
-        <h1 style={{ marginBottom: 24, color: CLUB_BLUE, fontSize: 26 }}>Vestiaire</h1>
-
         <div className="blm-card" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginBottom: 24 }}>
           <input
             placeholder="Rechercher un joueur..."

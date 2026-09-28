@@ -150,8 +150,6 @@ export default function ResultatsPage() {
     <div>
       <NavBar />
       <div style={{ maxWidth: 700, margin: '40px auto', fontFamily: 'sans-serif', padding: '0 16px' }}>
-        <h1 style={{ marginBottom: 24, color: CLUB_BLUE, fontSize: 26 }}>Résultats</h1>
-
         {results.length > 0 && (
           <div className="blm-card" style={{ marginBottom: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 6 }}>

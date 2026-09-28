@@ -20,11 +20,6 @@ export default function DefisPage() {
     <div>
       <NavBar />
       <div style={{ maxWidth: 800, margin: '40px auto', fontFamily: 'sans-serif', padding: '0 16px' }}>
-        <h1 style={{ marginBottom: 8, color: CLUB_BLUE, fontSize: 26 }}>Défis &amp; Badges</h1>
-        <p style={{ color: '#666', marginBottom: 20 }}>
-          Défis d&apos;équipe à valider pendant les matches et badges débloqués automatiquement — classement combiné sur la saison.
-        </p>
-
         <div className="blm-card" style={{ marginBottom: 24 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 6 }}>
             <span>Noir — {noir} pts</span>
