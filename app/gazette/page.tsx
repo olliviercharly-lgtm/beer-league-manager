@@ -136,8 +136,8 @@ export default function GazettePage() {
     }
   }
 
-  async function handleDeleteArticle(id: string) {
-    if (!confirm('Supprimer cet article ?')) return
+  async function handleDeleteArticle(id: string, title: string) {
+    if (!confirm(`Supprimer définitivement l'article "${title}" ? Cette action est irréversible.`)) return
     await supabase.from('articles').delete().eq('id', id)
     setArticles((prev) => prev.filter((a) => a.id !== id))
   }
@@ -380,7 +380,7 @@ export default function GazettePage() {
                 ))}
               </div>
 
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 8, flexWrap: 'wrap' }}>
                 {EMOJIS.map((emoji) => {
                   const count = reactionsForArticle(article.id).filter((r) => r.emoji === emoji).length
                   const active = !!myReaction(article.id, emoji)
@@ -401,18 +401,33 @@ export default function GazettePage() {
                   )
                 })}
 
-                <Link href={`/gazette/${article.id}`} className="blm-pill">
-                  Lire l&apos;article →
+                <Link
+                  href={`/gazette/${article.id}`}
+                  style={{ fontSize: 14, color: CLUB_BLUE, fontWeight: 'bold', whiteSpace: 'nowrap', textDecoration: 'none' }}
+                >
+                  Lire la suite →
                 </Link>
 
                 <ShareButton title={article.title} path={`/gazette/${article.id}`} excerpt={lines[0]} />
 
                 {canDelete && (
                   <button
-                    onClick={() => handleDeleteArticle(article.id)}
-                    style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#c00', cursor: 'pointer' }}
+                    onClick={() => handleDeleteArticle(article.id, article.title)}
+                    aria-label="Supprimer l'article"
+                    title="Supprimer l'article"
+                    style={{
+                      marginLeft: 'auto',
+                      background: 'none',
+                      border: 'none',
+                      color: '#c00',
+                      cursor: 'pointer',
+                      fontSize: 18,
+                      padding: 4,
+                      lineHeight: 1,
+                      flexShrink: 0,
+                    }}
                   >
-                    Supprimer
+                    🗑️
                   </button>
                 )}
               </div>
