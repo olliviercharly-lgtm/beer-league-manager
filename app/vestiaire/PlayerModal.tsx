@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useLeagueTeams, getContrastText } from '@/lib/useLeagueTeams'
 
 const CLUB_BLUE = '#003F6E'
 const CLUB_GOLD = '#C9A227'
@@ -42,6 +43,7 @@ type Props = {
 }
 
 export default function PlayerModal({ playerId, initialEditing, onClose }: Props) {
+  const teams = useLeagueTeams()
   const supabase = createClient()
   const [myId, setMyId] = useState<string | null>(null)
   const [player, setPlayer] = useState<PlayerDetail | null>(null)
@@ -271,12 +273,13 @@ export default function PlayerModal({ playerId, initialEditing, onClose }: Props
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span
                     style={{
-                      background: isNoir ? '#111' : '#fff', color: isNoir ? '#fff' : '#111',
-                      border: isNoir ? 'none' : '1px solid #111', fontSize: 12, fontWeight: 600,
+                      background: isNoir ? teams.noirColor : teams.blancColor,
+                      color: getContrastText(isNoir ? teams.noirColor : teams.blancColor),
+                      border: '1px solid rgba(0,0,0,0.12)', fontSize: 12, fontWeight: 600,
                       padding: '4px 12px', borderRadius: 20,
                     }}
                   >
-                    {isNoir ? 'Noir' : 'Blanc'}
+                    {isNoir ? teams.noirName : teams.blancName}
                   </span>
                   <button
                     onClick={onClose}
@@ -395,8 +398,8 @@ export default function PlayerModal({ playerId, initialEditing, onClose }: Props
                         onChange={(e) => setForm((f) => ({ ...f, team: e.target.value }))}
                         style={{ width: '100%', padding: 10, marginTop: 6, borderRadius: 10, border: '1px solid #ddd', background: '#F5F5F5' }}
                       >
-                        <option value="noir">Noir</option>
-                        <option value="blanc">Blanc</option>
+                        <option value="noir">{teams.noirName}</option>
+                        <option value="blanc">{teams.blancName}</option>
                       </select>
                     </div>
                   </div>

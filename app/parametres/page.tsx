@@ -320,7 +320,7 @@ export default function ParametresPage() {
               <div>
                 <div style={{ fontWeight: 600 }}>{p.first_name} {p.last_name}</div>
                 <div style={{ fontSize: 12, color: '#888' }}>
-                  {p.team === 'noir' ? 'Noir' : 'Blanc'}
+                  {p.team === 'noir' ? teamNoirName : teamBlancName}
                   {p.role === 'super_admin' && ' · Super admin'}
                   {p.role === 'admin' && ' · Admin'}
                 </div>

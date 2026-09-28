@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useLeagueTeams, getContrastText } from '@/lib/useLeagueTeams'
 import NavBar from '@/app/components/NavBar'
 import MatchModal from './MatchModal'
 import { effectiveIsAdmin } from '@/lib/viewRole'
@@ -17,6 +18,7 @@ type ResultChallenge = { id: string; result_id: string; challenge_id: string; te
 
 export default function ResultatsPage() {
   const supabase = createClient()
+  const teams = useLeagueTeams()
   const [me, setMe] = useState<Player | null>(null)
   const [pastTrainings, setPastTrainings] = useState<Training[]>([])
   const [results, setResults] = useState<Result[]>([])
@@ -153,22 +155,22 @@ export default function ResultatsPage() {
         {results.length > 0 && (
           <div className="blm-card" style={{ marginBottom: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 6 }}>
-              <span>Noir — {seasonStats.winsNoir} victoire(s) ({seasonStats.goalsNoir}b)</span>
-              <span>Blanc — {seasonStats.winsBlanc} victoire(s) ({seasonStats.goalsBlanc}b)</span>
+              <span>{teams.noirName} — {seasonStats.winsNoir} victoire(s) ({seasonStats.goalsNoir}b)</span>
+              <span>{teams.blancName} — {seasonStats.winsBlanc} victoire(s) ({seasonStats.goalsBlanc}b)</span>
             </div>
-            <div style={{ display: 'flex', height: 10, borderRadius: 6, overflow: 'hidden', marginBottom: 16 }}>
-              <div style={{ width: `${seasonStats.pctNoir}%`, background: '#111' }} />
-              <div style={{ width: `${100 - seasonStats.pctNoir}%`, background: '#ccc' }} />
+            <div style={{ display: 'flex', height: 10, borderRadius: 6, overflow: 'hidden', marginBottom: 16, border: '1px solid rgba(0,0,0,0.1)' }}>
+              <div style={{ width: `${seasonStats.pctNoir}%`, background: teams.noirColor }} />
+              <div style={{ width: `${100 - seasonStats.pctNoir}%`, background: teams.blancColor }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <div>
-                <span style={{ fontSize: 13, color: '#666' }}>Forme Noir : </span>
+                <span style={{ fontSize: 13, color: '#666' }}>Forme {teams.noirName} : </span>
                 {seasonStats.formeNoir.map((r, i) => (
                   <span key={i} style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: formeColor(r), marginLeft: 4 }} />
                 ))}
               </div>
               <div>
-                <span style={{ fontSize: 13, color: '#666' }}>Forme Blanc : </span>
+                <span style={{ fontSize: 13, color: '#666' }}>Forme {teams.blancName} : </span>
                 {seasonStats.formeBlanc.map((r, i) => (
                   <span key={i} style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: formeColor(r), marginLeft: 4 }} />
                 ))}
@@ -216,14 +218,14 @@ export default function ResultatsPage() {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                  <div style={{ flex: 1, textAlign: 'center', padding: '10px 0', borderRadius: 8, background: '#1A1A1A', color: '#fff' }}>
+                  <div style={{ flex: 1, textAlign: 'center', padding: '10px 0', borderRadius: 8, background: teams.noirColor, color: getContrastText(teams.noirColor) }}>
                     <div style={{ fontSize: 22, fontWeight: 700 }}>{result.score_noir}</div>
-                    <div style={{ fontSize: 11, letterSpacing: 0.5, opacity: 0.8 }}>NOIR</div>
+                    <div style={{ fontSize: 11, letterSpacing: 0.5, opacity: 0.8 }}>{teams.noirName.toUpperCase()}</div>
                   </div>
                   <span style={{ color: '#999', fontSize: 13 }}>vs</span>
-                  <div style={{ flex: 1, textAlign: 'center', padding: '10px 0', borderRadius: 8, background: '#fff', color: '#1A1A1A', border: '1px solid #1A1A1A' }}>
+                  <div style={{ flex: 1, textAlign: 'center', padding: '10px 0', borderRadius: 8, background: teams.blancColor, color: getContrastText(teams.blancColor), border: '1px solid rgba(0,0,0,0.15)' }}>
                     <div style={{ fontSize: 22, fontWeight: 700 }}>{result.score_blanc}</div>
-                    <div style={{ fontSize: 11, letterSpacing: 0.5, opacity: 0.6 }}>BLANC</div>
+                    <div style={{ fontSize: 11, letterSpacing: 0.5, opacity: 0.6 }}>{teams.blancName.toUpperCase()}</div>
                   </div>
                 </div>
 
@@ -245,7 +247,7 @@ export default function ResultatsPage() {
                           key={rc.id}
                           style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 999, border: '1px solid #ccc', fontSize: 13, color: '#333' }}
                         >
-                          ✓ {challenge.title} <em style={{ fontStyle: 'italic', color: '#777' }}>({rc.team === 'noir' ? 'Noir' : 'Blanc'})</em>
+                          ✓ {challenge.title} <em style={{ fontStyle: 'italic', color: '#777' }}>({rc.team === 'noir' ? teams.noirName : teams.blancName})</em>
                         </span>
                       )
                     })}

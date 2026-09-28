@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import NavBar from '@/app/components/NavBar'
 import PlayerModal from './PlayerModal'
+import { useLeagueTeams, getContrastText } from '@/lib/useLeagueTeams'
 
 type Player = {
   id: string
@@ -24,6 +25,7 @@ const CLUB_GOLD = '#C9A227'
 
 function VestiaireContent() {
   const supabase = createClient()
+  const teams = useLeagueTeams()
   const router = useRouter()
   const searchParams = useSearchParams()
   const openPlayerId = searchParams.get('player')
@@ -144,7 +146,7 @@ function VestiaireContent() {
               onClick={() => setTeamFilter(t)}
               className={teamFilter === t ? 'blm-pill-active' : 'blm-pill'}
             >
-              {t === 'all' ? 'Toutes équipes' : t === 'noir' ? 'Noir' : 'Blanc'}
+              {t === 'all' ? 'Toutes équipes' : t === 'noir' ? teams.noirName : teams.blancName}
             </button>
           ))}
           {(['all', 'attaquant', 'defenseur', 'gardien'] as const).map((p) => (
@@ -191,12 +193,13 @@ function VestiaireContent() {
                   </div>
                   <span
                     style={{
-                      background: isNoir ? '#111' : '#fff', color: isNoir ? '#fff' : '#111',
-                      border: isNoir ? 'none' : '1px solid #111', fontSize: 12, fontWeight: 600,
+                      background: isNoir ? teams.noirColor : teams.blancColor,
+                      color: getContrastText(isNoir ? teams.noirColor : teams.blancColor),
+                      border: '1px solid rgba(0,0,0,0.12)', fontSize: 12, fontWeight: 600,
                       padding: '4px 12px', borderRadius: 20,
                     }}
                   >
-                    {isNoir ? 'Noir' : 'Blanc'}
+                    {isNoir ? teams.noirName : teams.blancName}
                   </span>
                 </div>
 

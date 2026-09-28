@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useLeagueTeams } from '@/lib/useLeagueTeams'
 import NavBar from '@/app/components/NavBar'
 import { effectiveIsAdmin } from '@/lib/viewRole'
 
@@ -80,6 +81,7 @@ function nextPosition(pos: string) {
 
 export default function CalendarPage() {
   const supabase = createClient()
+  const teams = useLeagueTeams()
   const [me, setMe] = useState<Player | null>(null)
   const [trainings, setTrainings] = useState<Training[]>([])
   const [attendance, setAttendance] = useState<AttendanceRow[]>([])
@@ -416,8 +418,8 @@ export default function CalendarPage() {
                   </div>
 
                   {[
-                    { key: 'blanc', label: 'Blancs', rows: blancs, other: 'noir', otherLabel: 'Noir', dot: <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#fff', border: '2px solid #1A1A1A', display: 'inline-block' }} /> },
-                    { key: 'noir', label: 'Noirs', rows: noirs, other: 'blanc', otherLabel: 'Blanc', dot: <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#1A1A1A', display: 'inline-block' }} /> },
+                    { key: 'blanc', label: teams.blancName, rows: blancs, other: 'noir', otherLabel: teams.noirName, dot: <span style={{ width: 14, height: 14, borderRadius: '50%', background: teams.blancColor, border: '2px solid rgba(0,0,0,0.25)', display: 'inline-block' }} /> },
+                    { key: 'noir', label: teams.noirName, rows: noirs, other: 'blanc', otherLabel: teams.blancName, dot: <span style={{ width: 14, height: 14, borderRadius: '50%', background: teams.noirColor, display: 'inline-block' }} /> },
                     { key: 'forfaits', label: 'Forfaits', rows: forfaits, other: null, otherLabel: null, dot: <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#B23A2E', display: 'inline-block' }} /> },
                   ].map((block) => {
                     const blockKey = `${training.id}:${block.key}`

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { effectiveIsAdmin } from '@/lib/viewRole'
+import { useLeagueTeams } from '@/lib/useLeagueTeams'
 
 const CLUB_BLUE = '#003F6E'
 
@@ -26,6 +27,7 @@ type Override = { id: string; badge_key: string; team: string; status: string; p
 
 export default function BadgesTab({ onTotals }: { onTotals?: (t: { noir: number; blanc: number }) => void }) {
   const supabase = createClient()
+  const teams = useLeagueTeams()
   const [me, setMe] = useState<Player | null>(null)
   const [results, setResults] = useState<Result[]>([])
   const [trainings, setTrainings] = useState<Training[]>([])
@@ -313,14 +315,14 @@ export default function BadgesTab({ onTotals }: { onTotals?: (t: { noir: number;
           className={selectedTeam === 'noir' ? 'blm-pill-active' : 'blm-pill'}
           style={{ flex: 1, justifyContent: 'center', fontWeight: 'bold' }}
         >
-          NOIR
+          {teams.noirName.toUpperCase()}
         </button>
         <button
           onClick={() => setSelectedTeam('blanc')}
           className={selectedTeam === 'blanc' ? 'blm-pill-active' : 'blm-pill'}
           style={{ flex: 1, justifyContent: 'center', fontWeight: 'bold' }}
         >
-          BLANC
+          {teams.blancName.toUpperCase()}
         </button>
       </div>
 
@@ -405,7 +407,7 @@ export default function BadgesTab({ onTotals }: { onTotals?: (t: { noir: number;
       </div>
 
       <p style={{ fontSize: 12, color: '#999', marginTop: 8 }}>
-        Buts marqués cette saison — Noir : {computed.totalGoalsNoir} · Blanc : {computed.totalGoalsBlanc}
+        Buts marqués cette saison — {teams.noirName} : {computed.totalGoalsNoir} · {teams.blancName} : {computed.totalGoalsBlanc}
       </p>
 
       {selected && selectedBadge && (
@@ -425,7 +427,7 @@ export default function BadgesTab({ onTotals }: { onTotals?: (t: { noir: number;
                 <div>
                   <div style={{ fontWeight: 'bold', fontSize: 18 }}>Modifier le badge</div>
                   <div style={{ fontSize: 13, color: '#666' }}>
-                    {selectedBadge.label} — {selected.team === 'noir' ? 'Noir' : 'Blanc'}
+                    {selectedBadge.label} — {selected.team === 'noir' ? teams.noirName : teams.blancName}
                   </div>
                 </div>
               </div>
@@ -448,7 +450,7 @@ export default function BadgesTab({ onTotals }: { onTotals?: (t: { noir: number;
             />
 
             <div style={{ fontSize: 12, color: '#999', fontWeight: 'bold', marginBottom: 6 }}>
-              STATUT POUR {selected.team === 'noir' ? 'NOIR' : 'BLANC'}
+              STATUT POUR {(selected.team === 'noir' ? teams.noirName : teams.blancName).toUpperCase()}
             </div>
             <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
               <button
