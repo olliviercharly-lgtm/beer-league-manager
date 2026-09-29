@@ -200,6 +200,14 @@ export default function DefisTab({ onTotals }: { onTotals?: (t: { noir: number; 
     loadAll()
   }
 
+  function handleShareWhatsApp(c: Challenge) {
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const url = `${origin}/defis#challenge-${c.id}`
+    const message = `🏒 Nouveau défi proposé : "${c.title}" — Va voter ici 👉 ${url}`
+    const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`
+    window.open(waUrl, '_blank', 'noopener,noreferrer')
+  }
+
   if (loading) return <SkeletonList count={3} lines={2} />
 
   return (
@@ -299,12 +307,26 @@ export default function DefisTab({ onTotals }: { onTotals?: (t: { noir: number; 
               return (
                 <div
                   key={c.id}
+                  id={`challenge-${c.id}`}
                   className="blm-card"
-                  style={{ marginBottom: 16, borderTop: `4px solid ${CLUB_BLUE}`, paddingTop: 16 }}
+                  style={{ marginBottom: 16, borderTop: `4px solid ${CLUB_BLUE}`, paddingTop: 16, scrollMarginTop: 80 }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 19, fontWeight: 'bold', marginBottom: 8 }}>
-                    {c.icon && <span>{c.icon}</span>}
-                    <span>{c.title}</span>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 19, fontWeight: 'bold' }}>
+                      {c.icon && <span>{c.icon}</span>}
+                      <span>{c.title}</span>
+                    </div>
+                    <button
+                      onClick={() => handleShareWhatsApp(c)}
+                      title="Partager sur WhatsApp pour faire voter"
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,
+                        border: '1px solid #25D366', color: '#1F9955', background: '#F0FBF5',
+                        borderRadius: 999, padding: '5px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                      }}
+                    >
+                      📲 Partager
+                    </button>
                   </div>
                   {c.description && (
                     <p style={{ fontSize: 14, color: '#555', margin: '0 0 8px', lineHeight: 1.5 }}>{c.description}</p>
