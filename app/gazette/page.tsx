@@ -209,23 +209,19 @@ export default function GazettePage() {
     <div>
       <NavBar />
       <div style={{ maxWidth: 700, margin: '40px auto', fontFamily: 'sans-serif', padding: '0 16px' }}>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
-          <button
-            onClick={() => setFilterTheme('all')}
-            className={filterTheme === 'all' ? 'blm-pill-active' : 'blm-pill'}
-          >
-            Tous
-          </button>
+        <select
+          value={filterTheme}
+          onChange={(e) => setFilterTheme(e.target.value)}
+          style={{
+            width: '100%', maxWidth: 260, padding: '10px 12px', marginBottom: 24,
+            border: '1px solid #ccc', borderRadius: 10, background: '#fff', fontSize: 14, color: '#333',
+          }}
+        >
+          <option value="all">Tous les thèmes</option>
           {THEMES.map((t) => (
-            <button
-              key={t.value}
-              onClick={() => setFilterTheme(t.value)}
-              className={filterTheme === t.value ? 'blm-pill-active' : 'blm-pill'}
-            >
-              {t.label}
-            </button>
+            <option key={t.value} value={t.value}>{t.label}</option>
           ))}
-        </div>
+        </select>
 
         <button
           onClick={() => setShowForm((s) => !s)}
