@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useLeagueTeams } from '@/lib/useLeagueTeams'
+import { useGameNumbers } from '@/lib/useGameNumbers'
 import NavBar from '@/app/components/NavBar'
 import { SkeletonList } from '@/app/components/SkeletonCard'
 import { effectiveIsAdmin } from '@/lib/viewRole'
@@ -83,6 +84,7 @@ function nextPosition(pos: string) {
 export default function CalendarPage() {
   const supabase = createClient()
   const teams = useLeagueTeams()
+  const gameNumbers = useGameNumbers()
   const [me, setMe] = useState<Player | null>(null)
   const [trainings, setTrainings] = useState<Training[]>([])
   const [attendance, setAttendance] = useState<AttendanceRow[]>([])
@@ -251,7 +253,7 @@ export default function CalendarPage() {
             <>
               <div style={{ flex: 1, minWidth: 200 }}>
                 <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11.5, fontWeight: 700, letterSpacing: 1.2, marginBottom: 8, textTransform: 'uppercase' }}>
-                  Prochain entraînement
+                  Prochain entraînement{gameNumbers[nextTraining.id] ? ` · Match #${gameNumbers[nextTraining.id]}` : ''}
                 </div>
                 <div style={{ fontSize: 24, fontWeight: 'bold', color: '#fff', marginBottom: 6, textTransform: 'capitalize' }}>
                   {new Date(nextTraining.date_time).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -347,7 +349,14 @@ export default function CalendarPage() {
                   <div style={{ fontWeight: 'bold', fontSize: 16 }}>
                     {new Date(training.date_time).toLocaleString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                   </div>
-                  <div style={{ color: '#666', marginTop: 2 }}>{training.location}</div>
+                  <div style={{ color: '#666', marginTop: 2 }}>
+                    {training.location}
+                    {gameNumbers[training.id] && (
+                      <span style={{ marginLeft: 8, color: CLUB_BLUE, fontWeight: 700, fontSize: 12 }}>
+                        · Match #{gameNumbers[training.id]}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <button
                   style={{ background: '#F0F0F0', border: 'none', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', fontSize: 14 }}

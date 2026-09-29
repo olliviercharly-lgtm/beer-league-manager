@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useLeagueTeams, getContrastText } from '@/lib/useLeagueTeams'
+import { useGameNumbers } from '@/lib/useGameNumbers'
 import NavBar from '@/app/components/NavBar'
 import { SkeletonList } from '@/app/components/SkeletonCard'
 import MatchModal from './MatchModal'
@@ -20,6 +21,7 @@ type ResultChallenge = { id: string; result_id: string; challenge_id: string; te
 export default function ResultatsPage() {
   const supabase = createClient()
   const teams = useLeagueTeams()
+  const gameNumbers = useGameNumbers()
   const [me, setMe] = useState<Player | null>(null)
   const [pastTrainings, setPastTrainings] = useState<Training[]>([])
   const [results, setResults] = useState<Result[]>([])
@@ -177,6 +179,8 @@ export default function ResultatsPage() {
             {trainingsWithoutResult.map((t) => (
               <div key={t.id} className="blm-card" style={{ marginBottom: 12 }}>
                 <div style={{ fontSize: 13, color: '#666', marginBottom: 10 }}>
+                  {gameNumbers[t.id] && <strong style={{ color: CLUB_BLUE }}>Match #{gameNumbers[t.id]}</strong>}
+                  {gameNumbers[t.id] ? ' · ' : ''}
                   {new Date(t.date_time).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} · {t.location}
                 </div>
                 <button
@@ -207,6 +211,8 @@ export default function ResultatsPage() {
                 style={{ marginBottom: 16, borderTop: `4px solid ${CLUB_BLUE}`, paddingTop: 14 }}
               >
                 <div style={{ fontSize: 13, color: '#666', marginBottom: 10 }}>
+                  {gameNumbers[training.id] && <strong style={{ color: CLUB_BLUE }}>Match #{gameNumbers[training.id]}</strong>}
+                  {gameNumbers[training.id] ? ' · ' : ''}
                   {new Date(training.date_time).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} · {training.location}
                 </div>
 
