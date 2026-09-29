@@ -263,11 +263,34 @@ export default function DefisTab({ onTotals }: { onTotals?: (t: { noir: number; 
           </div>
         ))}
 
-        <details style={{ marginBottom: 32, marginTop: 16, border: '1px solid #ddd', borderRadius: 12, padding: 12 }}>
-          <summary style={{ cursor: 'pointer', fontWeight: 'bold' }}>
+        <details style={{ marginBottom: 32, marginTop: 16 }}>
+          <summary
+            style={{
+              listStyle: 'none',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '12px 22px',
+              borderRadius: 999,
+              border: `1.5px solid ${CLUB_BLUE}`,
+              color: CLUB_BLUE,
+              fontWeight: 700,
+              fontSize: 15,
+              background: '#F5F9FC',
+              userSelect: 'none',
+            }}
+          >
+            <span style={{ fontSize: 18, lineHeight: 1 }}>➕</span>
             {isAdmin ? 'Nouveau défi' : 'Proposer un défi'}
           </summary>
-          <form onSubmit={handleCreateChallenge} style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
+          <form
+            onSubmit={handleCreateChallenge}
+            style={{
+              display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12,
+              border: '1px solid #ddd', borderRadius: 12, padding: 16, background: '#fff',
+            }}
+          >
             <input
               placeholder="Titre du défi"
               value={newTitle}
