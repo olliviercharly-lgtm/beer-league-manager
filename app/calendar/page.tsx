@@ -323,6 +323,7 @@ export default function CalendarPage() {
           const countPos = (arr: AttendanceRow[], pos: string) => arr.filter((r) => effectivePosition(r) === pos).length
           const totalA = presents.filter((r) => effectivePosition(r) === 'attaquant').length
           const totalD = presents.filter((r) => effectivePosition(r) === 'defenseur').length
+          const totalG = presents.filter((r) => effectivePosition(r) === 'gardien').length
           const isExpanded = (expandedTrainings || []).includes(training.id)
           const pill = statusPill(myRow?.status)
 
@@ -443,12 +444,12 @@ export default function CalendarPage() {
                   ].map((block) => {
                     const blockKey = `${training.id}:${block.key}`
                     const blockExpanded = !!expandedBlocks[blockKey]
-                    const countLabel = block.key === 'forfaits'
-                      ? `${block.rows.length} forfait${block.rows.length > 1 ? 's' : ''}`
-                      : `${block.rows.length} (${countPos(block.rows, 'attaquant')}A / ${countPos(block.rows, 'defenseur')}D)`
                     const blockA = countPos(block.rows, 'attaquant')
                     const blockD = countPos(block.rows, 'defenseur')
                     const blockG = countPos(block.rows, 'gardien')
+                    const countLabel = block.key === 'forfaits'
+                      ? `${block.rows.length} forfait${block.rows.length > 1 ? 's' : ''}`
+                      : `${block.rows.length} (${blockA}A / ${blockD}D${blockG > 0 ? ` / ${blockG}G` : ''})`
 
                     return (
                       <div key={block.key} className="blm-subcard" style={{ marginBottom: 10 }}>
@@ -524,7 +525,7 @@ export default function CalendarPage() {
                   })}
 
                   <div style={{ marginTop: 14, fontSize: 14, textAlign: 'center' }}>
-                    <strong>{presents.length}</strong> joueurs présents ({totalA}A / {totalD}D)
+                    <strong>{presents.length}</strong> joueurs présents ({totalA}A / {totalD}D{totalG > 0 ? ` / ${totalG}G` : ''})
                     {forfaits.length > 0 && (
                       <> · <span style={{ color: '#B23A2E' }}>{forfaits.length} forfait{forfaits.length > 1 ? 's' : ''}</span></>
                     )}
