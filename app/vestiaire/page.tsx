@@ -127,31 +127,34 @@ function VestiaireContent() {
     <div>
       <NavBar />
       <div style={{ maxWidth: 900, margin: '40px auto', fontFamily: 'sans-serif', padding: '0 16px' }}>
-        <div className="blm-card" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginBottom: 24 }}>
+        <div className="blm-card" style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
           <input
             placeholder="Rechercher un joueur..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ flex: 1, minWidth: 160, padding: 8, border: '1px solid #ccc', borderRadius: 20 }}
+            style={{ width: '100%', padding: 10, border: '1px solid #ccc', borderRadius: 20, boxSizing: 'border-box' }}
           />
-          {(['all', 'noir', 'blanc'] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTeamFilter(t)}
-              className={teamFilter === t ? 'blm-pill-active' : 'blm-pill'}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <select
+              value={teamFilter}
+              onChange={(e) => setTeamFilter(e.target.value as 'all' | 'noir' | 'blanc')}
+              style={{ flex: 1, minWidth: 140, padding: '10px 12px', border: '1px solid #ccc', borderRadius: 10, background: '#fff', fontSize: 14, color: '#333' }}
             >
-              {t === 'all' ? 'Toutes équipes' : t === 'noir' ? teams.noirName : teams.blancName}
-            </button>
-          ))}
-          {(['all', 'attaquant', 'defenseur', 'gardien'] as const).map((p) => (
-            <button
-              key={p}
-              onClick={() => setPositionFilter(p)}
-              className={positionFilter === p ? 'blm-pill-active' : 'blm-pill'}
+              <option value="all">Toutes équipes</option>
+              <option value="noir">{teams.noirName}</option>
+              <option value="blanc">{teams.blancName}</option>
+            </select>
+            <select
+              value={positionFilter}
+              onChange={(e) => setPositionFilter(e.target.value as 'all' | 'attaquant' | 'defenseur' | 'gardien')}
+              style={{ flex: 1, minWidth: 140, padding: '10px 12px', border: '1px solid #ccc', borderRadius: 10, background: '#fff', fontSize: 14, color: '#333' }}
             >
-              {p === 'all' ? 'Tous postes' : p === 'attaquant' ? 'Attaquant' : p === 'defenseur' ? 'Défenseur' : 'Gardien'}
-            </button>
-          ))}
+              <option value="all">Tous postes</option>
+              <option value="attaquant">Attaquant</option>
+              <option value="defenseur">Défenseur</option>
+              <option value="gardien">Gardien</option>
+            </select>
+          </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
