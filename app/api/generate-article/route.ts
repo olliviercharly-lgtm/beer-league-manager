@@ -26,6 +26,10 @@ export async function POST(request: Request) {
   const body = await request.json()
   const { theme, trainingId, playerIds, instructions } = body
 
+  if (theme === 'autre' && !instructions?.trim()) {
+    return NextResponse.json({ error: "Merci de préciser un sujet pour cet article." }, { status: 400 })
+  }
+
   let contextText = ''
 
   if (theme === 'resume_match' && trainingId) {
@@ -78,7 +82,12 @@ export async function POST(request: Request) {
   const themeLabel =
     theme === 'resume_match' ? 'un résumé de match' :
     theme === 'rumeur_transfert' ? 'une rumeur de transfert (fictive et pour rire)' :
+    theme === 'autre' ? 'un article libre sur un sujet choisi par le joueur' :
     'une interview imaginaire de joueur'
+
+  const instructionsBlock = theme === 'autre'
+    ? (instructions ? `Sujet imposé par le joueur (l'article doit porter précisément sur ce sujet) : ${instructions}` : '')
+    : (instructions ? `Consignes du joueur qui demande l'article (n'affiche jamais ce texte tel quel dans l'article, utilise-le seulement pour orienter le ton ou l'angle) : ${instructions}` : '')
 
   const prompt = `${GEM_PERSONA}
 
@@ -87,7 +96,7 @@ Rédige ${themeLabel} pour La Gazette.
 Données disponibles à exploiter (ne les recopie pas telles quelles, sers-t'en comme matière) :
 ${contextText || 'Aucune donnée spécifique.'}
 
-${instructions ? `Consignes du joueur qui demande l'article (n'affiche jamais ce texte tel quel dans l'article, utilise-le seulement pour orienter le ton ou l'angle) : ${instructions}` : ''}
+${instructionsBlock}
 
 Écris un article complet (plusieurs paragraphes, pas un simple résumé de 2 lignes), drôle, avec une vraie accroche. Réponds uniquement au format JSON suivant, sans aucun texte autour :
 {"title": "titre accrocheur", "body": "corps de l'article en plusieurs paragraphes séparés par des sauts de ligne"}`

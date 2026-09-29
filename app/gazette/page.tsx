@@ -26,6 +26,7 @@ const THEMES = [
   { value: 'resume_match', label: 'Résumé de match' },
   { value: 'rumeur_transfert', label: 'Rumeur de transfert' },
   { value: 'interview', label: 'Interview joueur' },
+  { value: 'autre', label: 'Autre' },
 ]
 
 const EMOJIS = ['👏', '🔥', '😂']
@@ -146,7 +147,7 @@ export default function GazettePage() {
         body: JSON.stringify({
           theme: genTheme,
           trainingId: genTheme === 'resume_match' ? selectedTrainingId : undefined,
-          playerIds: genTheme !== 'resume_match' ? selectedPlayerIds : undefined,
+          playerIds: (genTheme === 'rumeur_transfert' || genTheme === 'interview') ? selectedPlayerIds : undefined,
           instructions,
         }),
       })
@@ -295,11 +296,17 @@ export default function GazettePage() {
               </>
             )}
 
-            <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>Consignes (optionnel)</label>
+            <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>
+              {genTheme === 'autre' ? "Sujet de l'article (obligatoire)" : 'Consignes (optionnel)'}
+            </label>
             <textarea
               value={instructions}
               onChange={(e) => setInstructions(e.target.value)}
-              placeholder="Ex : sois plus sarcastique, parle du fameux but manqué..."
+              placeholder={
+                genTheme === 'autre'
+                  ? "Ex : un édito sur la nouvelle règle du hors-jeu, un top 5 des pires excuses pour sécher l'entraînement..."
+                  : 'Ex : sois plus sarcastique, parle du fameux but manqué...'
+              }
               style={{ width: '100%', padding: 8, marginBottom: 16, borderRadius: 6, minHeight: 60 }}
             />
 
@@ -307,9 +314,9 @@ export default function GazettePage() {
 
             <button
               onClick={handleGenerate}
-              disabled={generating}
+              disabled={generating || (genTheme === 'autre' && !instructions.trim())}
               className="blm-btn-primary"
-              style={{ opacity: generating ? 0.6 : 1 }}
+              style={{ opacity: (generating || (genTheme === 'autre' && !instructions.trim())) ? 0.6 : 1 }}
             >
               {generating ? 'Génération en cours...' : 'Générer'}
             </button>
