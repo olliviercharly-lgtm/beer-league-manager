@@ -47,58 +47,37 @@ export default function BadgesTab({ onTotals }: { onTotals?: (t: { noir: number;
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const { data: meData } = await supabase
-      .from('players')
-      .select('id, role, league_id')
-      .eq('auth_user_id', user.id)
-      .single()
+    const [meResult, resultsResult, challengesResult, activeCountResult] = await Promise.all([
+      supabase.from('players').select('id, role, league_id').eq('auth_user_id', user.id).single(),
+      supabase.from('results').select('id, training_id, score_noir, score_blanc'),
+      supabase.from('challenges').select('id, points'),
+      supabase.from('challenges').select('id', { count: 'exact', head: true }).eq('status', 'active'),
+    ])
+
+    const meData = meResult.data
     setMe(meData)
+    setResults(resultsResult.data || [])
+    setChallengeInfos(challengesResult.data || [])
+    setActiveChallengeCount(activeCountResult.count || 0)
 
-    const { data: resultsData } = await supabase
-      .from('results')
-      .select('id, training_id, score_noir, score_blanc')
-    setResults(resultsData || [])
+    const trainingIds = (resultsResult.data || []).map((r) => r.training_id)
+    const resultIds = (resultsResult.data || []).map((r) => r.id)
 
-    const trainingIds = (resultsData || []).map((r) => r.training_id)
-    if (trainingIds.length > 0) {
-      const { data: trainingsData } = await supabase
-        .from('trainings')
-        .select('id, date_time')
-        .in('id', trainingIds)
-      setTrainings(trainingsData || [])
-    } else {
-      setTrainings([])
-    }
+    const [trainingsResult, rcResult, overridesResult] = await Promise.all([
+      trainingIds.length > 0
+        ? supabase.from('trainings').select('id, date_time').in('id', trainingIds)
+        : Promise.resolve({ data: [] }),
+      resultIds.length > 0
+        ? supabase.from('result_challenges').select('id, result_id, challenge_id, team').in('result_id', resultIds)
+        : Promise.resolve({ data: [] }),
+      meData
+        ? supabase.from('badge_overrides').select('id, badge_key, team, status, points').eq('league_id', meData.league_id)
+        : Promise.resolve({ data: [] }),
+    ])
 
-    const resultIds = (resultsData || []).map((r) => r.id)
-    if (resultIds.length > 0) {
-      const { data: rcData } = await supabase
-        .from('result_challenges')
-        .select('id, result_id, challenge_id, team')
-        .in('result_id', resultIds)
-      setResultChallenges(rcData || [])
-    } else {
-      setResultChallenges([])
-    }
-
-    const { data: challengesData } = await supabase
-      .from('challenges')
-      .select('id, points')
-    setChallengeInfos(challengesData || [])
-
-    const { count } = await supabase
-      .from('challenges')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'active')
-    setActiveChallengeCount(count || 0)
-
-    if (meData) {
-      const { data: overridesData } = await supabase
-        .from('badge_overrides')
-        .select('id, badge_key, team, status, points')
-        .eq('league_id', meData.league_id)
-      setOverrides(overridesData || [])
-    }
+    setTrainings(trainingsResult.data || [])
+    setResultChallenges(rcResult.data || [])
+    if (meData) setOverrides(overridesResult.data || [])
 
     setLoading(false)
   }

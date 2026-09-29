@@ -32,21 +32,17 @@ export default function ResultatsPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const { data: meData } = await supabase
-      .from('players')
-      .select('id, role')
-      .eq('auth_user_id', user.id)
-      .single()
-    setMe(meData)
+    const [meResult, trainingsResult, challengesResult] = await Promise.all([
+      supabase.from('players').select('id, role').eq('auth_user_id', user.id).single(),
+      supabase.from('trainings').select('id, date_time, location').lt('date_time', new Date().toISOString()).order('date_time', { ascending: false }),
+      supabase.from('challenges').select('id, icon, title, description, points, status'),
+    ])
 
-    const { data: trainingsData } = await supabase
-      .from('trainings')
-      .select('id, date_time, location')
-      .lt('date_time', new Date().toISOString())
-      .order('date_time', { ascending: false })
-    setPastTrainings(trainingsData || [])
+    setMe(meResult.data)
+    setPastTrainings(trainingsResult.data || [])
+    setChallenges(challengesResult.data || [])
 
-    const trainingIds = (trainingsData || []).map((t) => t.id)
+    const trainingIds = (trainingsResult.data || []).map((t) => t.id)
     if (trainingIds.length > 0) {
       const { data: resultsData } = await supabase
         .from('results')
@@ -56,18 +52,12 @@ export default function ResultatsPage() {
 
       const resultIds = (resultsData || []).map((r) => r.id)
       if (resultIds.length > 0) {
-        const { data: highlightsData } = await supabase
-          .from('highlights')
-          .select('id, result_id, text, position')
-          .in('result_id', resultIds)
-          .order('position', { ascending: true })
-        setHighlights(highlightsData || [])
-
-        const { data: resultChallengesData } = await supabase
-          .from('result_challenges')
-          .select('id, result_id, challenge_id, team')
-          .in('result_id', resultIds)
-        setResultChallenges(resultChallengesData || [])
+        const [highlightsResult, rcResult] = await Promise.all([
+          supabase.from('highlights').select('id, result_id, text, position').in('result_id', resultIds).order('position', { ascending: true }),
+          supabase.from('result_challenges').select('id, result_id, challenge_id, team').in('result_id', resultIds),
+        ])
+        setHighlights(highlightsResult.data || [])
+        setResultChallenges(rcResult.data || [])
       } else {
         setHighlights([])
         setResultChallenges([])
@@ -77,11 +67,6 @@ export default function ResultatsPage() {
       setHighlights([])
       setResultChallenges([])
     }
-
-    const { data: challengesData } = await supabase
-      .from('challenges')
-      .select('id, icon, title, description, points, status')
-    setChallenges(challengesData || [])
 
     setLoading(false)
   }

@@ -45,31 +45,17 @@ function VestiaireContent() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const { data: meData } = await supabase
-        .from('players')
-        .select('id')
-        .eq('auth_user_id', user.id)
-        .single()
+      const [meResult, playersResult, attendanceResult, resultsResult] = await Promise.all([
+        supabase.from('players').select('id').eq('auth_user_id', user.id).single(),
+        supabase.from('players').select('id, auth_user_id, first_name, last_name, number, team, position').order('first_name', { ascending: true }),
+        supabase.from('attendance').select('player_id, training_id, status, team').eq('status', 'present'),
+        supabase.from('results').select('training_id, score_noir, score_blanc'),
+      ])
 
-      setMe(meData)
-
-      const { data: playersData } = await supabase
-        .from('players')
-        .select('id, auth_user_id, first_name, last_name, number, team, position')
-        .order('first_name', { ascending: true })
-
-      setPlayers(playersData || [])
-
-      const { data: attendanceData } = await supabase
-        .from('attendance')
-        .select('player_id, training_id, status, team')
-        .eq('status', 'present')
-      setAttendance(attendanceData || [])
-
-      const { data: resultsData } = await supabase
-        .from('results')
-        .select('training_id, score_noir, score_blanc')
-      setResults(resultsData || [])
+      setMe(meResult.data)
+      setPlayers(playersResult.data || [])
+      setAttendance(attendanceResult.data || [])
+      setResults(resultsResult.data || [])
 
       setLoading(false)
     }

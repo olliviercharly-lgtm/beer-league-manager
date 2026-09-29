@@ -47,20 +47,19 @@ export default function DefisTab({ onTotals }: { onTotals?: (t: { noir: number; 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const { data: meData } = await supabase
-      .from('players')
-      .select('id, role, league_id')
-      .eq('auth_user_id', user.id)
-      .single()
-    setMe(meData)
+    const [meResult, challengesResult, resultChallengesResult, playersResult] = await Promise.all([
+      supabase.from('players').select('id, role, league_id').eq('auth_user_id', user.id).single(),
+      supabase.from('challenges').select('id, icon, title, description, points, status, proposed_by').order('created_at', { ascending: false }),
+      supabase.from('result_challenges').select('id, challenge_id, team'),
+      supabase.from('players').select('id, first_name, last_name'),
+    ])
 
-    const { data: challengesData } = await supabase
-      .from('challenges')
-      .select('id, icon, title, description, points, status, proposed_by')
-      .order('created_at', { ascending: false })
-    setChallenges(challengesData || [])
+    setMe(meResult.data)
+    setChallenges(challengesResult.data || [])
+    setResultChallenges(resultChallengesResult.data || [])
+    setPlayers(playersResult.data || [])
 
-    const challengeIds = (challengesData || []).map((c) => c.id)
+    const challengeIds = (challengesResult.data || []).map((c) => c.id)
     if (challengeIds.length > 0) {
       const { data: votesData } = await supabase
         .from('challenge_votes')
@@ -70,16 +69,6 @@ export default function DefisTab({ onTotals }: { onTotals?: (t: { noir: number; 
     } else {
       setVotes([])
     }
-
-    const { data: resultChallengesData } = await supabase
-      .from('result_challenges')
-      .select('id, challenge_id, team')
-    setResultChallenges(resultChallengesData || [])
-
-    const { data: playersData } = await supabase
-      .from('players')
-      .select('id, first_name, last_name')
-    setPlayers(playersData || [])
 
     setLoading(false)
   }

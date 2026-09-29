@@ -51,44 +51,32 @@ export default function GazettePage() {
 
   async function loadAll() {
     setLoading(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      const { data } = await supabase
-        .from('players')
-        .select('id, first_name, last_name, team, role, league_id')
-        .eq('auth_user_id', user.id)
-        .single()
-      setMe(data)
-    }
 
-    const { data: playersData } = await supabase
-      .from('players')
-      .select('id, first_name, last_name, team')
-      .order('first_name', { ascending: true })
-    setPlayers(playersData || [])
+    const [userResult, playersResult, trainingsResult, articlesResult] = await Promise.all([
+      supabase.auth.getUser(),
+      supabase.from('players').select('id, first_name, last_name, team').order('first_name', { ascending: true }),
+      supabase.from('trainings').select('id, date_time, location').order('date_time', { ascending: false }),
+      supabase.from('articles').select('id, theme, title, body, author_id, created_at').order('created_at', { ascending: false }),
+    ])
 
-    const { data: trainingsData } = await supabase
-      .from('trainings')
-      .select('id, date_time, location')
-      .order('date_time', { ascending: false })
-    setTrainings(trainingsData || [])
+    const user = userResult.data.user
+    setPlayers(playersResult.data || [])
+    setTrainings(trainingsResult.data || [])
+    setArticles(articlesResult.data || [])
 
-    const { data: articlesData } = await supabase
-      .from('articles')
-      .select('id, theme, title, body, author_id, created_at')
-      .order('created_at', { ascending: false })
-    setArticles(articlesData || [])
+    const articleIds = (articlesResult.data || []).map((a) => a.id)
 
-    const articleIds = (articlesData || []).map((a) => a.id)
-    if (articleIds.length > 0) {
-      const { data: reactionsData } = await supabase
-        .from('article_reactions')
-        .select('id, article_id, player_id, emoji')
-        .in('article_id', articleIds)
-      setReactions(reactionsData || [])
-    } else {
-      setReactions([])
-    }
+    const [meResult, reactionsResult] = await Promise.all([
+      user
+        ? supabase.from('players').select('id, first_name, last_name, team, role, league_id').eq('auth_user_id', user.id).single()
+        : Promise.resolve({ data: null }),
+      articleIds.length > 0
+        ? supabase.from('article_reactions').select('id, article_id, player_id, emoji').in('article_id', articleIds)
+        : Promise.resolve({ data: [] }),
+    ])
+
+    setMe(meResult.data)
+    setReactions(reactionsResult.data || [])
 
     setLoading(false)
   }
