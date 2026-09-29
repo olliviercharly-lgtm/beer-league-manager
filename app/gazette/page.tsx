@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import ShareButton from '@/app/components/ShareButton'
 import NavBar from '@/app/components/NavBar'
+import { SkeletonList } from '@/app/components/SkeletonCard'
 import { effectiveIsAdmin } from '@/lib/viewRole'
 
 const CLUB_BLUE = '#003F6E'
@@ -197,7 +198,7 @@ export default function GazettePage() {
       <div>
         <NavBar />
         <div style={{ maxWidth: 700, margin: '40px auto', fontFamily: 'sans-serif', padding: '0 16px' }}>
-          Chargement...
+          <SkeletonList count={3} lines={4} />
         </div>
       </div>
     )

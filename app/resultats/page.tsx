@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useLeagueTeams, getContrastText } from '@/lib/useLeagueTeams'
 import NavBar from '@/app/components/NavBar'
+import { SkeletonList } from '@/app/components/SkeletonCard'
 import MatchModal from './MatchModal'
 import { effectiveIsAdmin } from '@/lib/viewRole'
 
@@ -122,7 +123,16 @@ export default function ResultatsPage() {
     loadAll()
   }
 
-  if (loading) return <p style={{ padding: 40 }}>Chargement...</p>
+  if (loading) {
+    return (
+      <div>
+        <NavBar />
+        <div style={{ maxWidth: 720, margin: '32px auto 40px', fontFamily: 'sans-serif', padding: '0 16px' }}>
+          <SkeletonList count={3} lines={3} />
+        </div>
+      </div>
+    )
+  }
 
   const formeColor = (r: string) => (r === 'V' ? '#2E7D5B' : r === 'D' ? '#B23A2E' : '#999')
 

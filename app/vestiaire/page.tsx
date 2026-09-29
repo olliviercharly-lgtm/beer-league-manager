@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import NavBar from '@/app/components/NavBar'
+import { SkeletonList } from '@/app/components/SkeletonCard'
 import PlayerModal from './PlayerModal'
 import { useLeagueTeams, getContrastText } from '@/lib/useLeagueTeams'
 
@@ -111,7 +112,16 @@ function VestiaireContent() {
     router.push('/vestiaire', { scroll: false })
   }
 
-  if (loading) return <p style={{ padding: 40 }}>Chargement...</p>
+  if (loading) {
+    return (
+      <div>
+        <NavBar />
+        <div style={{ maxWidth: 720, margin: '32px auto 40px', fontFamily: 'sans-serif', padding: '0 16px' }}>
+          <SkeletonList count={4} lines={2} />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -250,7 +260,7 @@ function VestiaireContent() {
 
 export default function VestiairePage() {
   return (
-    <Suspense fallback={<div><p style={{ padding: 40 }}>Chargement...</p></div>}>
+    <Suspense fallback={<div style={{ maxWidth: 720, margin: '32px auto 40px', padding: '0 16px' }}><SkeletonList count={4} lines={2} /></div>}>
       <VestiaireContent />
     </Suspense>
   )

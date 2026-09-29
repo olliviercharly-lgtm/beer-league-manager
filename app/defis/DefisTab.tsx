@@ -1,5 +1,7 @@
 'use client'
 
+import { SkeletonList } from '@/app/components/SkeletonCard'
+
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { effectiveIsAdmin } from '@/lib/viewRole'
@@ -198,7 +200,7 @@ export default function DefisTab({ onTotals }: { onTotals?: (t: { noir: number; 
     loadAll()
   }
 
-  if (loading) return <p style={{ padding: 40 }}>Chargement...</p>
+  if (loading) return <SkeletonList count={3} lines={2} />
 
   return (
     <>

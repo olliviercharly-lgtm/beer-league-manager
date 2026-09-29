@@ -101,3 +101,15 @@ html, body {
 .blm-nav-links::-webkit-scrollbar {
   display: none;
 }
+
+@keyframes blm-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.blm-skeleton {
+  background: linear-gradient(90deg, #e9ebef 25%, #dde0e6 37%, #e9ebef 63%);
+  background-size: 400% 100%;
+  animation: blm-shimmer 1.4s ease infinite;
+  border-radius: 8px;
+}

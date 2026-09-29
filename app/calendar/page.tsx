@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useLeagueTeams } from '@/lib/useLeagueTeams'
 import NavBar from '@/app/components/NavBar'
+import { SkeletonList } from '@/app/components/SkeletonCard'
 import { effectiveIsAdmin } from '@/lib/viewRole'
 
 const CLUB_BLUE = '#003F6E'
@@ -221,7 +222,16 @@ export default function CalendarPage() {
     loadAll()
   }
 
-  if (loading) return <p style={{ padding: 40 }}>Chargement...</p>
+  if (loading) {
+    return (
+      <div>
+        <NavBar />
+        <div style={{ maxWidth: 720, margin: '32px auto 40px', fontFamily: 'sans-serif', padding: '0 16px' }}>
+          <SkeletonList count={3} lines={3} />
+        </div>
+      </div>
+    )
+  }
 
   const isAdmin = effectiveIsAdmin(me?.role)
   const nextTraining = trainings[0]
