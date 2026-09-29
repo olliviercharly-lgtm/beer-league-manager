@@ -48,23 +48,16 @@ function LoginForm() {
         return
       }
 
-      const onboardingPath = `/onboarding${invite ? `?invite=${encodeURIComponent(invite)}` : ''}`
-      const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(onboardingPath)}`
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { emailRedirectTo: callbackUrl },
-      })
+      const { error } = await supabase.auth.signUp({ email, password })
       if (error) {
         setError(error.message)
         setLoading(false)
         return
       }
-      setSuccess('Compte créé ! Vérifie ta boîte mail pour confirmer, tu seras redirigé automatiquement.')
-      setMode('login')
-      setPassword('')
-      setConfirmPassword('')
-      setLoading(false)
+
+      const onboardingPath = `/onboarding${invite ? `?invite=${encodeURIComponent(invite)}` : ''}`
+      router.push(next || onboardingPath)
+      router.refresh()
       return
     }
 
