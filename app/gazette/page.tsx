@@ -393,7 +393,7 @@ export default function GazettePage() {
 
             {dailySuggestions(genTheme).length > 0 && (
               <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 12, color: '#888', marginBottom: 6 }}>Besoin d'inspiration ?</div>
+                <div style={{ fontSize: 12, color: '#888', marginBottom: 6 }}>{"Besoin d'inspiration ?"}</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                   {dailySuggestions(genTheme).map((s, i) => (
                     <button
@@ -471,7 +471,7 @@ export default function GazettePage() {
               style={{ width: '100%', padding: 8, marginBottom: 16, borderRadius: 6, minHeight: 60 }}
             />
 
-            <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>Ton de l'article</label>
+            <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>{"Ton de l'article"}</label>
             <select
               value={tone}
               onChange={(e) => setTone(e.target.value)}
