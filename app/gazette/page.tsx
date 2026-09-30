@@ -1,17 +1,20 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import ShareButton from '@/app/components/ShareButton'
 import NavBar from '@/app/components/NavBar'
 import { SkeletonList } from '@/app/components/SkeletonCard'
 import { effectiveIsAdmin } from '@/lib/viewRole'
+import { useGameNumbers } from '@/lib/useGameNumbers'
 
 const CLUB_BLUE = '#003F6E'
+const CLUB_GOLD = '#C9A227'
 
 type Player = { id: string; first_name: string; last_name: string; team: string; role?: string; league_id?: string }
 type Training = { id: string; date_time: string; location: string }
+type Result = { id: string; training_id: string; score_noir: number; score_blanc: number }
 type Article = {
   id: string
   theme: string
@@ -29,13 +32,87 @@ const THEMES = [
   { value: 'autre', label: 'Autre' },
 ]
 
+const TONES = [
+  { value: 'classique', label: 'Classique (parodie sportive)' },
+  { value: 'sarcastique', label: 'Sarcastique à fond' },
+  { value: 'complot', label: 'Rumeur qui prend des proportions' },
+  { value: 'nostalgique', label: 'Vieux sage du vestiaire' },
+  { value: 'flash', label: 'Flash info punchy' },
+]
+
+const SUGGESTIONS: Record<string, string[]> = {
+  resume_match: [
+    "Raconte ce match comme une finale de Coupe Stanley.",
+    "Concentre-toi sur la défense qui a fait toute la différence.",
+    "Écris ça comme un commentateur qui n'a rien compris au hockey.",
+    "Fais un mini classement des 3 moments forts du match.",
+    "Adopte le ton d'un vétéran qui a tout vu, tout vécu.",
+  ],
+  interview: [
+    "Pose des questions absurdes sur les habitudes d'avant-match.",
+    "Fais une interview façon conférence de presse post-victoire, même après une défaite.",
+    "Demande-lui son plus grand regret de la saison, sur le ton de la confidence.",
+    "Imagine une interview 'bilan de mi-saison' complètement à côté de la plaque.",
+  ],
+  rumeur_transfert: [
+    "Une rumeur de transfert vers un club totalement improbable.",
+    "Un feuilleton mercato avec plusieurs 'sources proches du vestiaire'.",
+    "Une rumeur de retraite anticipée démentie dans le même article.",
+    "Un cauchemar mercato : il resterait finalement dans l'équipe.",
+  ],
+  autre: [
+    "Un édito sur la nouvelle règle du hors-jeu (ou une règle inventée).",
+    "Un top 5 des pires excuses pour sécher l'entraînement.",
+    "Une chronique météo appliquée au vestiaire.",
+    "Un horoscope du dimanche soir pour chaque poste (attaquant, défenseur, gardien).",
+    "Une enquête fictive sur qui a piqué la dernière bière du vestiaire.",
+    "Un bilan (parodique) de mi-saison de la ligue.",
+  ],
+}
+
+function dayIndex(len: number, offset = 0) {
+  if (len <= 0) return 0
+  const dayOfYear = Math.floor(
+    (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000
+  )
+  return (dayOfYear + offset) % len
+}
+
+function dailySuggestions(theme: string, count = 3): string[] {
+  const pool = SUGGESTIONS[theme] || []
+  if (pool.length === 0) return []
+  const start = dayIndex(pool.length)
+  const picked: string[] = []
+  for (let i = 0; i < Math.min(count, pool.length); i++) {
+    picked.push(pool[(start + i) % pool.length])
+  }
+  return picked
+}
+
+function SuggestionChip({ onClick, children }: { onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        textAlign: 'left', padding: '10px 12px', borderRadius: 10, border: '1px solid #ddd',
+        background: '#fff', cursor: 'pointer', fontSize: 13.5, color: '#333',
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
 const EMOJIS = ['👏', '🔥', '😂']
 
 export default function GazettePage() {
   const supabase = createClient()
+  const gameNumbers = useGameNumbers()
   const [me, setMe] = useState<Player | null>(null)
   const [players, setPlayers] = useState<Player[]>([])
   const [trainings, setTrainings] = useState<Training[]>([])
+  const [results, setResults] = useState<Result[]>([])
   const [articles, setArticles] = useState<Article[]>([])
   const [reactions, setReactions] = useState<Reaction[]>([])
   const [loading, setLoading] = useState(true)
@@ -46,6 +123,7 @@ export default function GazettePage() {
   const [selectedTrainingId, setSelectedTrainingId] = useState('')
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([])
   const [instructions, setInstructions] = useState('')
+  const [tone, setTone] = useState(TONES[0].value)
   const [generating, setGenerating] = useState(false)
   const [draft, setDraft] = useState<{ title: string; body: string } | null>(null)
   const [genError, setGenError] = useState('')
@@ -54,16 +132,18 @@ export default function GazettePage() {
   async function loadAll() {
     setLoading(true)
 
-    const [userResult, playersResult, trainingsResult, articlesResult] = await Promise.all([
+    const [userResult, playersResult, trainingsResult, resultsResult, articlesResult] = await Promise.all([
       supabase.auth.getUser(),
       supabase.from('players').select('id, first_name, last_name, team').order('first_name', { ascending: true }),
       supabase.from('trainings').select('id, date_time, location').order('date_time', { ascending: false }),
+      supabase.from('results').select('id, training_id, score_noir, score_blanc'),
       supabase.from('articles').select('id, theme, title, body, author_id, created_at').order('created_at', { ascending: false }),
     ])
 
     const user = userResult.data.user
     setPlayers(playersResult.data || [])
     setTrainings(trainingsResult.data || [])
+    setResults(resultsResult.data || [])
     setArticles(articlesResult.data || [])
 
     const articleIds = (articlesResult.data || []).map((a) => a.id)
@@ -92,6 +172,22 @@ export default function GazettePage() {
     if (filterTheme === 'all') return articles
     return articles.filter((a) => a.theme === filterTheme)
   }, [articles, filterTheme])
+
+  const lastPlayedMatch = useMemo(() => {
+    const withResult = trainings
+      .filter((t) => results.some((r) => r.training_id === t.id))
+      .sort((a, b) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime())
+    const training = withResult[0]
+    if (!training) return null
+    const result = results.find((r) => r.training_id === training.id)
+    if (!result) return null
+    return { training, result }
+  }, [trainings, results])
+
+  const featuredPlayer = useMemo(() => {
+    if (players.length === 0) return null
+    return players[dayIndex(players.length, 7)]
+  }, [players])
 
   function playerName(id: string) {
     const p = players.find((pl) => pl.id === id)
@@ -136,6 +232,16 @@ export default function GazettePage() {
     setSelectedPlayerIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
   }
 
+  function applySuggestion(opts: { theme: string; trainingId?: string; playerIds?: string[]; instructions: string }) {
+    setShowForm(true)
+    setGenTheme(opts.theme)
+    setDraft(null)
+    setGenError('')
+    setSelectedTrainingId(opts.trainingId || '')
+    setSelectedPlayerIds(opts.playerIds || [])
+    setInstructions(opts.instructions)
+  }
+
   async function handleGenerate() {
     setGenError('')
     setGenerating(true)
@@ -149,6 +255,7 @@ export default function GazettePage() {
           trainingId: genTheme === 'resume_match' ? selectedTrainingId : undefined,
           playerIds: (genTheme === 'rumeur_transfert' || genTheme === 'interview') ? selectedPlayerIds : undefined,
           instructions,
+          tone,
         }),
       })
       const data = await res.json()
@@ -191,6 +298,7 @@ export default function GazettePage() {
       setInstructions('')
       setSelectedPlayerIds([])
       setSelectedTrainingId('')
+      setTone(TONES[0].value)
     }
   }
 
@@ -223,6 +331,41 @@ export default function GazettePage() {
           ))}
         </select>
 
+        {(lastPlayedMatch || featuredPlayer) && (
+          <div className="blm-card" style={{ marginBottom: 20, borderLeft: `4px solid ${CLUB_GOLD}` }}>
+            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 10, color: CLUB_BLUE }}>💡 Idées du jour</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {lastPlayedMatch && (
+                <SuggestionChip
+                  onClick={() => applySuggestion({
+                    theme: 'resume_match',
+                    trainingId: lastPlayedMatch.training.id,
+                    instructions: `Concentre-toi sur le score du Match #${gameNumbers[lastPlayedMatch.training.id] ?? ''} (${lastPlayedMatch.result.score_noir} - ${lastPlayedMatch.result.score_blanc}) et raconte-le comme si c'était une finale.`,
+                  })}
+                >
+                  🏒 Écrire le résumé du Match #{gameNumbers[lastPlayedMatch.training.id] ?? '?'} ({lastPlayedMatch.result.score_noir}-{lastPlayedMatch.result.score_blanc})
+                </SuggestionChip>
+              )}
+              {featuredPlayer && (
+                <SuggestionChip
+                  onClick={() => applySuggestion({
+                    theme: 'interview',
+                    playerIds: [featuredPlayer.id],
+                    instructions: `Fais un portrait/interview surprise de ${featuredPlayer.first_name} ${featuredPlayer.last_name}, jamais mis en avant récemment.`,
+                  })}
+                >
+                  🎤 Interview surprise de {featuredPlayer.first_name} {featuredPlayer.last_name}
+                </SuggestionChip>
+              )}
+              {dailySuggestions('autre', 2).map((s, i) => (
+                <SuggestionChip key={i} onClick={() => applySuggestion({ theme: 'autre', instructions: s })}>
+                  ✍️ {s}
+                </SuggestionChip>
+              ))}
+            </div>
+          </div>
+        )}
+
         <button
           onClick={() => setShowForm((s) => !s)}
           className="blm-btn-primary"
@@ -248,6 +391,27 @@ export default function GazettePage() {
               ))}
             </select>
 
+            {dailySuggestions(genTheme).length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 12, color: '#888', marginBottom: 6 }}>Besoin d'inspiration ?</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {dailySuggestions(genTheme).map((s, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setInstructions(s)}
+                      style={{
+                        padding: '6px 10px', borderRadius: 999, border: `1px solid ${CLUB_BLUE}`,
+                        background: '#fff', color: CLUB_BLUE, fontSize: 12, cursor: 'pointer',
+                      }}
+                    >
+                      {s.length > 40 ? s.slice(0, 40) + '…' : s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {genTheme === 'resume_match' && (
               <>
                 <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>Match</label>
@@ -259,6 +423,7 @@ export default function GazettePage() {
                   <option value="">-- Choisir un entraînement --</option>
                   {trainings.map((tr) => (
                     <option key={tr.id} value={tr.id}>
+                      {gameNumbers[tr.id] ? `Match #${gameNumbers[tr.id]} — ` : ''}
                       {new Date(tr.date_time).toLocaleDateString('fr-FR')} — {tr.location}
                     </option>
                   ))}
@@ -305,6 +470,17 @@ export default function GazettePage() {
               }
               style={{ width: '100%', padding: 8, marginBottom: 16, borderRadius: 6, minHeight: 60 }}
             />
+
+            <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>Ton de l'article</label>
+            <select
+              value={tone}
+              onChange={(e) => setTone(e.target.value)}
+              style={{ width: '100%', padding: 8, marginBottom: 16, borderRadius: 6 }}
+            >
+              {TONES.map((t) => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
 
             {genError && <p style={{ color: 'red', marginBottom: 12 }}>{genError}</p>}
 

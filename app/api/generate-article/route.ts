@@ -6,6 +6,14 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 
 const GEM_PERSONA = `Tu es le rédacteur en chef de "La Gazette", le journal parodique et humoristique d'un club de hockey amateur du dimanche soir ("Beer League Manager"). Ton ton est vif, plein de vannes et de private jokes de vestiaire, façon parodie de presse sportive. Tu écris toujours en français.`
 
+const TONE_DESCRIPTIONS: Record<string, string> = {
+  classique: "Ton par défaut : vif, plein de vannes et de private jokes de vestiaire.",
+  sarcastique: "Ton résolument sarcastique et ironique, qui se moque gentiment de tout le monde, y compris de qui a demandé cet article.",
+  complot: "Ton de rumeur qui prend des proportions ridicules, façon théorie du complot de vestiaire, avec de fausses 'sources proches du dossier'.",
+  nostalgique: "Ton d'un vieux sage du vestiaire qui a 'tout vu, tout vécu', avec des comparaisons d'un autre temps et un brin de nostalgie exagérée.",
+  flash: "Ton de flash info : phrases courtes, punchy, façon dépêche d'agence de presse parodique.",
+}
+
 export async function POST(request: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -24,7 +32,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json()
-  const { theme, trainingId, playerIds, instructions } = body
+  const { theme, trainingId, playerIds, instructions, tone } = body
 
   if (theme === 'autre' && !instructions?.trim()) {
     return NextResponse.json({ error: "Merci de préciser un sujet pour cet article." }, { status: 400 })
@@ -89,7 +97,24 @@ export async function POST(request: Request) {
     ? (instructions ? `Sujet imposé par le joueur (l'article doit porter précisément sur ce sujet) : ${instructions}` : '')
     : (instructions ? `Consignes du joueur qui demande l'article (n'affiche jamais ce texte tel quel dans l'article, utilise-le seulement pour orienter le ton ou l'angle) : ${instructions}` : '')
 
+  const toneInstruction = TONE_DESCRIPTIONS[tone as string] || TONE_DESCRIPTIONS.classique
+
+  const { data: recentArticles } = await supabase
+    .from('articles')
+    .select('title')
+    .eq('league_id', me.league_id)
+    .order('created_at', { ascending: false })
+    .limit(5)
+
+  const recentTitles = (recentArticles || []).map((a) => a.title).filter(Boolean)
+
+  const antiRepetitionBlock = recentTitles.length > 0
+    ? `Voici les titres des derniers articles déjà publiés dans La Gazette. Ne les recopie jamais et évite absolument de réutiliser les mêmes jeux de mots, structures de titre, chutes ou angles que ceux-ci : ${recentTitles.map((t) => `"${t}"`).join(', ')}.`
+    : ''
+
   const prompt = `${GEM_PERSONA}
+
+Ton à adopter pour cet article précis : ${toneInstruction}
 
 Rédige ${themeLabel} pour La Gazette.
 
@@ -98,7 +123,9 @@ ${contextText || 'Aucune donnée spécifique.'}
 
 ${instructionsBlock}
 
-Écris un article complet (plusieurs paragraphes, pas un simple résumé de 2 lignes), drôle, avec une vraie accroche. Réponds uniquement au format JSON suivant, sans aucun texte autour :
+${antiRepetitionBlock}
+
+Écris un article complet (plusieurs paragraphes, pas un simple résumé de 2 lignes), drôle, avec une vraie accroche, et avec un angle différent des articles précédents cités ci-dessus. Réponds uniquement au format JSON suivant, sans aucun texte autour :
 {"title": "titre accrocheur", "body": "corps de l'article en plusieurs paragraphes séparés par des sauts de ligne"}`
 
   const model = genAI.getGenerativeModel({
