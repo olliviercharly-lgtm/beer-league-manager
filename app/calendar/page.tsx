@@ -531,11 +531,6 @@ export default function CalendarPage() {
                                       </button>
                                       <span style={{ flex: 1, fontWeight: 600, fontSize: 14.5 }}>
                                         {r.players?.first_name} {r.players?.last_name}
-                                        {isHybrid && (
-                                          <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: CLUB_GOLD, border: `1px solid ${CLUB_GOLD}`, borderRadius: 999, padding: '1px 6px' }}>
-                                            HYBRIDE
-                                          </span>
-                                        )}
                                       </span>
                                       <button
                                         onClick={() => handleTransferTeam(r, block.other as string)}
