@@ -30,7 +30,7 @@ export async function GET() {
 
   const { data: players, error } = await admin
     .from('players')
-    .select('id, first_name, last_name, team, role')
+    .select('id, first_name, last_name, team, role, is_hybrid')
     .eq('league_id', me.league_id)
     .order('first_name', { ascending: true })
 
@@ -49,9 +49,18 @@ export async function PATCH(request: Request) {
   const { me, admin } = result
 
   const body = await request.json()
-  const { playerId, role } = body
+  const { playerId, role, is_hybrid } = body
 
-  if (!playerId || (role !== 'player' && role !== 'admin')) {
+  if (!playerId) {
+    return NextResponse.json({ error: 'Requête invalide.' }, { status: 400 })
+  }
+  if (role !== undefined && role !== 'player' && role !== 'admin') {
+    return NextResponse.json({ error: 'Requête invalide.' }, { status: 400 })
+  }
+  if (is_hybrid !== undefined && typeof is_hybrid !== 'boolean') {
+    return NextResponse.json({ error: 'Requête invalide.' }, { status: 400 })
+  }
+  if (role === undefined && is_hybrid === undefined) {
     return NextResponse.json({ error: 'Requête invalide.' }, { status: 400 })
   }
 
@@ -65,13 +74,17 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'Joueur introuvable.' }, { status: 404 })
   }
 
-  if (target.role === 'super_admin') {
+  if (role !== undefined && target.role === 'super_admin') {
     return NextResponse.json({ error: 'Ce compte est protégé et ne peut pas être modifié.' }, { status: 403 })
   }
 
+  const updates: Record<string, unknown> = {}
+  if (role !== undefined) updates.role = role
+  if (is_hybrid !== undefined) updates.is_hybrid = is_hybrid
+
   const { error } = await admin
     .from('players')
-    .update({ role })
+    .update(updates)
     .eq('id', playerId)
 
   if (error) {

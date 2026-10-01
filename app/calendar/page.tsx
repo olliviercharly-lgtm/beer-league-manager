@@ -33,7 +33,7 @@ type AttendanceRow = {
   player_id: string
   status: string
   team: string | null
-  players: { first_name: string; last_name: string; team: string; position: string | null } | null
+  players: { first_name: string; last_name: string; team: string; position: string | null; is_hybrid: boolean | null } | null
 }
 
 function statusPill(status: string | undefined) {
@@ -75,7 +75,13 @@ function positionStyle(pos: string | undefined | null) {
   return { bg: '#EDEFF3', color: '#6B7688' }
 }
 
-function nextPosition(pos: string) {
+function nextPosition(pos: string, isHybrid: boolean) {
+  if (isHybrid) {
+    if (pos === 'attaquant') return 'defenseur'
+    if (pos === 'defenseur') return 'gardien'
+    if (pos === 'gardien') return 'attaquant'
+    return pos
+  }
   if (pos === 'attaquant') return 'defenseur'
   if (pos === 'defenseur') return 'attaquant'
   return pos
@@ -125,7 +131,7 @@ export default function CalendarPage() {
 
     const { data: attendanceData } = await supabase
       .from('attendance')
-      .select('id, training_id, player_id, status, team, players(first_name, last_name, team, position)')
+      .select('id, training_id, player_id, status, team, players(first_name, last_name, team, position, is_hybrid)')
 
     setAttendance((attendanceData as unknown as AttendanceRow[]) || [])
     setPositionOverrides({})
@@ -142,9 +148,10 @@ export default function CalendarPage() {
   }
 
   function handleChangePosition(r: AttendanceRow) {
+    const isHybrid = !!r.players?.is_hybrid
     const current = effectivePosition(r)
-    if (current === 'gardien') return
-    setPositionOverrides((prev) => ({ ...prev, [r.id]: nextPosition(current) }))
+    if (current === 'gardien' && !isHybrid) return
+    setPositionOverrides((prev) => ({ ...prev, [r.id]: nextPosition(current, isHybrid) }))
   }
 
   async function handleTransferTeam(r: AttendanceRow, targetTeam: string) {
@@ -506,15 +513,17 @@ export default function CalendarPage() {
                                 {block.rows.map((r) => {
                                   const pos = effectivePosition(r)
                                   const style = positionStyle(pos)
+                                  const isHybrid = !!r.players?.is_hybrid
+                                  const canChangePosition = isHybrid || pos !== 'gardien'
                                   return (
                                     <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', borderBottom: '1px solid #eee' }}>
                                       <button
                                         onClick={() => handleChangePosition(r)}
-                                        title={pos !== 'gardien' ? 'Changer le poste (ce match uniquement)' : undefined}
+                                        title={canChangePosition ? 'Changer le poste (ce match uniquement)' : undefined}
                                         style={{
                                           width: 26, height: 26, borderRadius: '50%', border: 'none', flexShrink: 0,
                                           background: style.bg, color: style.color, fontWeight: 800, fontSize: 12,
-                                          cursor: pos !== 'gardien' ? 'pointer' : 'default',
+                                          cursor: canChangePosition ? 'pointer' : 'default',
                                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         }}
                                       >
@@ -522,6 +531,11 @@ export default function CalendarPage() {
                                       </button>
                                       <span style={{ flex: 1, fontWeight: 600, fontSize: 14.5 }}>
                                         {r.players?.first_name} {r.players?.last_name}
+                                        {isHybrid && (
+                                          <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: CLUB_GOLD, border: `1px solid ${CLUB_GOLD}`, borderRadius: 999, padding: '1px 6px' }}>
+                                            HYBRIDE
+                                          </span>
+                                        )}
                                       </span>
                                       <button
                                         onClick={() => handleTransferTeam(r, block.other as string)}
