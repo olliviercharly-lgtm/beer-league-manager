@@ -70,6 +70,12 @@ function effectiveTeam(r: AttendanceRow) {
   return r.team ?? r.players?.team ?? 'noir'
 }
 
+function positionRank(pos: string | undefined | null) {
+  if (pos === 'gardien') return 0
+  if (pos === 'defenseur') return 1
+  return 2
+}
+
 function positionLetter(pos: string | undefined | null) {
   if (pos === 'attaquant') return 'A'
   if (pos === 'defenseur') return 'D'
@@ -584,7 +590,9 @@ function CalendarPageInner() {
                                   {blockD > 0 && <><strong>{blockD} Défenseur{blockD > 1 ? 's' : ''}</strong>{blockG > 0 ? ' • ' : ''}</>}
                                   {blockG > 0 && <strong>{blockG} Gardien{blockG > 1 ? 's' : ''}</strong>}
                                 </div>
-                                {block.rows.map((r) => {
+                                {[...block.rows]
+                                  .sort((a, b) => positionRank(effectivePosition(a)) - positionRank(effectivePosition(b)))
+                                  .map((r) => {
                                   const pos = effectivePosition(r)
                                   const style = positionStyle(pos)
                                   const isHybrid = !!r.players?.is_hybrid
