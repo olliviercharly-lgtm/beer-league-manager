@@ -111,6 +111,11 @@ export default function GazettePage() {
   const [genError, setGenError] = useState('')
   const [publishing, setPublishing] = useState(false)
 
+  const [editingArticleId, setEditingArticleId] = useState<string | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editBody, setEditBody] = useState('')
+  const [savingEdit, setSavingEdit] = useState(false)
+
   async function loadAll() {
     setLoading(true)
 
@@ -190,6 +195,31 @@ export default function GazettePage() {
     if (!confirm(`Supprimer définitivement l'article "${title}" ? Cette action est irréversible.`)) return
     await supabase.from('articles').delete().eq('id', id)
     setArticles((prev) => prev.filter((a) => a.id !== id))
+  }
+
+  function handleStartEditArticle(article: Article) {
+    setEditingArticleId(article.id)
+    setEditTitle(article.title)
+    setEditBody(article.body)
+  }
+
+  function handleCancelEditArticle() {
+    setEditingArticleId(null)
+    setEditTitle('')
+    setEditBody('')
+  }
+
+  async function handleSaveEditArticle(id: string) {
+    if (!editTitle.trim() || !editBody.trim()) return
+    setSavingEdit(true)
+    const { error } = await supabase
+      .from('articles')
+      .update({ title: editTitle.trim(), body: editBody })
+      .eq('id', id)
+    setSavingEdit(false)
+    if (error) return
+    setArticles((prev) => prev.map((a) => (a.id === id ? { ...a, title: editTitle.trim(), body: editBody } : a)))
+    setEditingArticleId(null)
   }
 
   function togglePlayerSelection(id: string) {
@@ -414,10 +444,19 @@ export default function GazettePage() {
 
             {draft && (
               <div style={{ marginTop: 24, borderTop: '1px solid #eee', paddingTop: 16 }}>
-                <h3 style={{ marginBottom: 8 }}>{draft.title}</h3>
-                {draft.body.split('\n').filter(Boolean).map((para, i) => (
-                  <p key={i} style={{ marginBottom: 12, lineHeight: 1.5 }}>{para}</p>
-                ))}
+                <div style={{ fontSize: 12, color: '#888', marginBottom: 6 }}>
+                  Aperçu — tu peux ajuster le texte avant de publier
+                </div>
+                <input
+                  value={draft.title}
+                  onChange={(e) => setDraft(draft ? { ...draft, title: e.target.value } : draft)}
+                  style={{ width: '100%', padding: 8, marginBottom: 10, borderRadius: 6, border: '1px solid #ddd', fontWeight: 'bold', fontSize: 16 }}
+                />
+                <textarea
+                  value={draft.body}
+                  onChange={(e) => setDraft(draft ? { ...draft, body: e.target.value } : draft)}
+                  style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid #ddd', minHeight: 220, lineHeight: 1.5, fontFamily: 'inherit', fontSize: 14 }}
+                />
                 <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
                   <button
                     onClick={handleGenerate}
@@ -443,81 +482,118 @@ export default function GazettePage() {
 
         {filteredArticles.map((article) => {
           const lines = article.body.split('\n').filter(Boolean)
-          const canDelete = me && (me.id === article.author_id || effectiveIsAdmin(me.role))
+          const canEdit = !!me && (me.id === article.author_id || effectiveIsAdmin(me.role))
+          const isEditing = editingArticleId === article.id
 
           return (
             <div key={article.id} className="blm-card" style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>{themeLabel(article.theme)}</div>
-              <h3 style={{ marginBottom: 4 }}>{article.title}</h3>
-              <div style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>
-                Par {playerName(article.author_id)} · {new Date(article.created_at).toLocaleDateString('fr-FR')}
-              </div>
 
-              <div
-                style={{
-                  display: '-webkit-box',
-                  WebkitLineClamp: 5,
-                  WebkitBoxOrient: 'vertical' as const,
-                  overflow: 'hidden',
-                  marginBottom: 12,
-                }}
-              >
-                {lines.map((para, i) => (
-                  <p key={i} style={{ marginBottom: 12, lineHeight: 1.5 }}>{para}</p>
-                ))}
-              </div>
-
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 8, flexWrap: 'wrap' }}>
-                {EMOJIS.map((emoji) => {
-                  const count = reactionsForArticle(article.id).filter((r) => r.emoji === emoji).length
-                  const active = !!myReaction(article.id, emoji)
-                  return (
+              {isEditing ? (
+                <>
+                  <input
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    style={{ width: '100%', padding: 8, marginBottom: 8, borderRadius: 6, border: '1px solid #ddd', fontWeight: 'bold', fontSize: 16 }}
+                  />
+                  <div style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>
+                    Par {playerName(article.author_id)} · {new Date(article.created_at).toLocaleDateString('fr-FR')}
+                  </div>
+                  <textarea
+                    value={editBody}
+                    onChange={(e) => setEditBody(e.target.value)}
+                    style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid #ddd', minHeight: 180, lineHeight: 1.5, fontFamily: 'inherit', fontSize: 14, marginBottom: 12 }}
+                  />
+                  <div style={{ display: 'flex', gap: 8 }}>
                     <button
-                      key={emoji}
-                      onClick={() => handleToggleReaction(article.id, emoji)}
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: 20,
-                        border: active ? `1px solid ${CLUB_BLUE}` : '1px solid #ddd',
-                        background: active ? '#eaf2fa' : '#fff',
-                        cursor: 'pointer',
-                      }}
+                      onClick={handleCancelEditArticle}
+                      style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #ddd', background: '#fff', color: '#666', cursor: 'pointer' }}
                     >
-                      {emoji} {count > 0 ? count : ''}
+                      Annuler
                     </button>
-                  )
-                })}
+                    <button
+                      onClick={() => handleSaveEditArticle(article.id)}
+                      disabled={savingEdit || !editTitle.trim() || !editBody.trim()}
+                      className="blm-btn-primary"
+                    >
+                      {savingEdit ? 'Enregistrement...' : 'Enregistrer'}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h3 style={{ marginBottom: 4 }}>{article.title}</h3>
+                  <div style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>
+                    Par {playerName(article.author_id)} · {new Date(article.created_at).toLocaleDateString('fr-FR')}
+                  </div>
 
-                <Link
-                  href={`/gazette/${article.id}`}
-                  style={{ fontSize: 14, color: CLUB_BLUE, fontWeight: 'bold', whiteSpace: 'nowrap', textDecoration: 'none' }}
-                >
-                  Lire la suite →
-                </Link>
-
-                <ShareButton title={article.title} path={`/gazette/${article.id}`} excerpt={lines[0]} />
-
-                {canDelete && (
-                  <button
-                    onClick={() => handleDeleteArticle(article.id, article.title)}
-                    aria-label="Supprimer l'article"
-                    title="Supprimer l'article"
+                  <div
                     style={{
-                      marginLeft: 'auto',
-                      background: 'none',
-                      border: 'none',
-                      color: '#c00',
-                      cursor: 'pointer',
-                      fontSize: 18,
-                      padding: 4,
-                      lineHeight: 1,
-                      flexShrink: 0,
+                      display: '-webkit-box',
+                      WebkitLineClamp: 5,
+                      WebkitBoxOrient: 'vertical' as const,
+                      overflow: 'hidden',
+                      marginBottom: 12,
                     }}
                   >
-                    🗑️
-                  </button>
-                )}
-              </div>
+                    {lines.map((para, i) => (
+                      <p key={i} style={{ marginBottom: 12, lineHeight: 1.5 }}>{para}</p>
+                    ))}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 8, flexWrap: 'wrap' }}>
+                    {EMOJIS.map((emoji) => {
+                      const count = reactionsForArticle(article.id).filter((r) => r.emoji === emoji).length
+                      const active = !!myReaction(article.id, emoji)
+                      return (
+                        <button
+                          key={emoji}
+                          onClick={() => handleToggleReaction(article.id, emoji)}
+                          style={{
+                            padding: '4px 10px',
+                            borderRadius: 20,
+                            border: active ? `1px solid ${CLUB_BLUE}` : '1px solid #ddd',
+                            background: active ? '#eaf2fa' : '#fff',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {emoji} {count > 0 ? count : ''}
+                        </button>
+                      )
+                    })}
+
+                    <Link
+                      href={`/gazette/${article.id}`}
+                      style={{ fontSize: 14, color: CLUB_BLUE, fontWeight: 'bold', whiteSpace: 'nowrap', textDecoration: 'none' }}
+                    >
+                      Lire la suite →
+                    </Link>
+
+                    <ShareButton title={article.title} path={`/gazette/${article.id}`} excerpt={lines[0]} />
+
+                    {canEdit && (
+                      <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
+                        <button
+                          onClick={() => handleStartEditArticle(article)}
+                          aria-label="Modifier l'article"
+                          title="Modifier l'article"
+                          style={{ background: 'none', border: 'none', color: CLUB_BLUE, cursor: 'pointer', fontSize: 16, padding: 4, lineHeight: 1, flexShrink: 0 }}
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={() => handleDeleteArticle(article.id, article.title)}
+                          aria-label="Supprimer l'article"
+                          title="Supprimer l'article"
+                          style={{ background: 'none', border: 'none', color: '#c00', cursor: 'pointer', fontSize: 18, padding: 4, lineHeight: 1, flexShrink: 0 }}
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           )
         })}
