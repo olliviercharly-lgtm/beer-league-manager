@@ -1,10 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useLeagueTeams } from '@/lib/useLeagueTeams'
 import { useGameNumbers } from '@/lib/useGameNumbers'
 import NavBar from '@/app/components/NavBar'
+import ShareButton from '@/app/components/ShareButton'
 import { SkeletonList } from '@/app/components/SkeletonCard'
 import { effectiveIsAdmin } from '@/lib/viewRole'
 
@@ -25,6 +27,12 @@ type Training = {
   id: string
   date_time: string
   location: string
+}
+
+type LeaguePlayer = {
+  id: string
+  first_name: string
+  last_name: string
 }
 
 type AttendanceRow = {
@@ -87,13 +95,17 @@ function nextPosition(pos: string, isHybrid: boolean) {
   return pos
 }
 
-export default function CalendarPage() {
+function CalendarPageInner() {
   const supabase = createClient()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const focusTrainingId = searchParams.get('training')
   const teams = useLeagueTeams()
   const gameNumbers = useGameNumbers()
   const [me, setMe] = useState<Player | null>(null)
   const [trainings, setTrainings] = useState<Training[]>([])
   const [attendance, setAttendance] = useState<AttendanceRow[]>([])
+  const [leaguePlayers, setLeaguePlayers] = useState<LeaguePlayer[]>([])
   const [loading, setLoading] = useState(true)
   const [newDate, setNewDate] = useState('')
   const [newLocation, setNewLocation] = useState('')
@@ -106,7 +118,11 @@ export default function CalendarPage() {
 
   async function loadAll() {
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    if (!user) {
+      const next = `/calendar${focusTrainingId ? `?training=${focusTrainingId}` : ''}`
+      router.push(`/login?next=${encodeURIComponent(next)}`)
+      return
+    }
 
     const { data: meData } = await supabase
       .from('players')
@@ -126,6 +142,7 @@ export default function CalendarPage() {
 
     setExpandedTrainings((prev) => {
       if (prev !== null) return prev
+      if (focusTrainingId) return [focusTrainingId]
       return trainingsData && trainingsData.length > 0 ? [trainingsData[0].id] : []
     })
 
@@ -135,6 +152,15 @@ export default function CalendarPage() {
 
     setAttendance((attendanceData as unknown as AttendanceRow[]) || [])
     setPositionOverrides({})
+
+    if (meData?.league_id) {
+      const { data: leaguePlayersData } = await supabase
+        .from('players')
+        .select('id, first_name, last_name')
+        .eq('league_id', meData.league_id)
+      setLeaguePlayers(leaguePlayersData || [])
+    }
+
     setLoading(false)
   }
 
@@ -142,6 +168,23 @@ export default function CalendarPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadAll()
   }, [])
+
+  useEffect(() => {
+    if (loading || !focusTrainingId) return
+    const el = document.getElementById(`training-${focusTrainingId}`)
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [loading, focusTrainingId])
+
+  function pendingNames(trainingId: string) {
+    const respondedIds = new Set(attendance.filter((a) => a.training_id === trainingId).map((a) => a.player_id))
+    return leaguePlayers.filter((p) => !respondedIds.has(p.id)).map((p) => p.first_name)
+  }
+
+  function pendingLabel(names: string[]) {
+    if (names.length === 0) return ''
+    if (names.length <= 4) return `${names.join(', ')} n'${names.length > 1 ? 'ont' : 'a'} pas encore répondu.`
+    return `${names.slice(0, 4).join(', ')} et ${names.length - 4} autre${names.length - 4 > 1 ? 's' : ''} n'ont pas encore répondu.`
+  }
 
   function effectivePosition(r: AttendanceRow) {
     return positionOverrides[r.id] ?? r.players?.position ?? 'attaquant'
@@ -244,6 +287,8 @@ export default function CalendarPage() {
 
   const isAdmin = effectiveIsAdmin(me?.role)
   const nextTraining = trainings[0]
+  const nextPendingNames = nextTraining ? pendingNames(nextTraining.id) : []
+  const nextPendingCount = nextPendingNames.length
 
   return (
     <div>
@@ -291,6 +336,18 @@ export default function CalendarPage() {
             <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.85)' }}>Aucun entraînement à venir</div>
           )}
         </div>
+
+        {isAdmin && nextTraining && (
+          <div style={{ maxWidth: 720, margin: '18px auto 0', position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'flex-end' }}>
+            <ShareButton
+              variant="button"
+              label={nextPendingCount > 0 ? `Relancer (${nextPendingCount} en attente)` : 'Relancer les joueurs'}
+              title={`Entraînement ${new Date(nextTraining.date_time).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`}
+              path={`/calendar?training=${nextTraining.id}`}
+              excerpt={`⏰ Entraînement ${new Date(nextTraining.date_time).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} à ${new Date(nextTraining.date_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} (${nextTraining.location}).${nextPendingCount > 0 ? ` ${pendingLabel(nextPendingNames)}` : ''} Clique pour te déclarer présent ou forfait en 1 clic 👇`}
+            />
+          </div>
+        )}
 
         <svg
           className="blm-hero-rink"
@@ -345,9 +402,16 @@ export default function CalendarPage() {
           const totalG = presents.filter((r) => effectivePosition(r) === 'gardien').length
           const isExpanded = (expandedTrainings || []).includes(training.id)
           const pill = statusPill(myRow?.status)
+          const trainingPendingNames = pendingNames(training.id)
+          const pendingCount = trainingPendingNames.length
 
           return (
-            <div key={training.id} className="blm-card" style={{ marginBottom: 16 }}>
+            <div
+              key={training.id}
+              id={`training-${training.id}`}
+              className="blm-card"
+              style={{ marginBottom: 16, scrollMarginTop: 16, ...(focusTrainingId === training.id ? { border: `2px solid ${CLUB_GOLD}` } : {}) }}
+            >
               <div
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', cursor: 'pointer' }}
                 onClick={() => toggleTraining(training.id)}
@@ -365,11 +429,21 @@ export default function CalendarPage() {
                     )}
                   </div>
                 </div>
-                <button
-                  style={{ background: '#F0F0F0', border: 'none', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', fontSize: 14 }}
-                >
-                  {isExpanded ? '▲' : '▼'}
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} onClick={(e) => e.stopPropagation()}>
+                  {isAdmin && (
+                    <ShareButton
+                      title={`Entraînement ${new Date(training.date_time).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`}
+                      path={`/calendar?training=${training.id}`}
+                      excerpt={`⏰ Entraînement ${new Date(training.date_time).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} à ${new Date(training.date_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} (${training.location}).${pendingCount > 0 ? ` ${pendingLabel(trainingPendingNames)}` : ''} Clique pour te déclarer présent ou forfait en 1 clic 👇`}
+                    />
+                  )}
+                  <button
+                    onClick={() => toggleTraining(training.id)}
+                    style={{ background: '#F0F0F0', border: 'none', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', fontSize: 14 }}
+                  >
+                    {isExpanded ? '▲' : '▼'}
+                  </button>
+                </div>
               </div>
 
               {isAdmin && editingTrainingId !== training.id && (
@@ -565,5 +639,13 @@ export default function CalendarPage() {
         })}
       </div>
     </div>
+  )
+}
+
+export default function CalendarPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh' }} />}>
+      <CalendarPageInner />
+    </Suspense>
   )
 }
