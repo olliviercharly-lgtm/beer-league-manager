@@ -208,10 +208,16 @@ function CalendarPageInner() {
     loadAll()
   }
 
+  async function handleSetGoalieTeam(r: AttendanceRow, team: 'blanc' | 'noir') {
+    const next = r.team === team ? null : team
+    await supabase.from('attendance').update({ team: next }).eq('id', r.id)
+    loadAll()
+  }
+
   async function setMyStatus(trainingId: string, status: string) {
     if (!me) return
     await supabase.from('attendance').upsert(
-      { training_id: trainingId, player_id: me.id, status, team: me.team },
+      { training_id: trainingId, player_id: me.id, status, team: me.position === 'gardien' ? null : me.team },
       { onConflict: 'training_id,player_id' }
     )
     loadAll()
@@ -400,8 +406,9 @@ function CalendarPageInner() {
           const presents = rows.filter((r) => r.status === 'present')
           const forfaits = rows.filter((r) => r.status === 'forfait')
           const myRow = rows.find((r) => r.player_id === me?.id)
-          const blancs = presents.filter((r) => effectiveTeam(r) === 'blanc')
-          const noirs = presents.filter((r) => effectiveTeam(r) === 'noir')
+          const gardiens = presents.filter((r) => effectivePosition(r) === 'gardien')
+          const blancs = presents.filter((r) => effectiveTeam(r) === 'blanc' && effectivePosition(r) !== 'gardien')
+          const noirs = presents.filter((r) => effectiveTeam(r) === 'noir' && effectivePosition(r) !== 'gardien')
           const countPos = (arr: AttendanceRow[], pos: string) => arr.filter((r) => effectivePosition(r) === pos).length
           const totalA = presents.filter((r) => effectivePosition(r) === 'attaquant').length
           const totalD = presents.filter((r) => effectivePosition(r) === 'defenseur').length
@@ -546,16 +553,18 @@ function CalendarPageInner() {
                   {[
                     { key: 'blanc', label: teams.blancName, rows: blancs, other: 'noir', otherLabel: teams.noirName, dot: <span style={{ width: 14, height: 14, borderRadius: '50%', background: teams.blancColor, border: '2px solid rgba(0,0,0,0.25)', display: 'inline-block' }} /> },
                     { key: 'noir', label: teams.noirName, rows: noirs, other: 'blanc', otherLabel: teams.blancName, dot: <span style={{ width: 14, height: 14, borderRadius: '50%', background: teams.noirColor, display: 'inline-block' }} /> },
+                    { key: 'gardiens', label: 'Gardiens', rows: gardiens, other: null, otherLabel: null, dot: <span style={{ width: 14, height: 14, borderRadius: '50%', background: CLUB_GOLD, display: 'inline-block' }} /> },
                     { key: 'forfaits', label: 'Forfaits', rows: forfaits, other: null, otherLabel: null, dot: <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#B23A2E', display: 'inline-block' }} /> },
                   ].map((block) => {
                     const blockKey = `${training.id}:${block.key}`
                     const blockExpanded = !!expandedBlocks[blockKey]
                     const blockA = countPos(block.rows, 'attaquant')
                     const blockD = countPos(block.rows, 'defenseur')
-                    const blockG = countPos(block.rows, 'gardien')
                     const countLabel = block.key === 'forfaits'
                       ? `${block.rows.length} forfait${block.rows.length > 1 ? 's' : ''}`
-                      : `${block.rows.length} (${blockA}A / ${blockD}D${blockG > 0 ? ` / ${blockG}G` : ''})`
+                      : block.key === 'gardiens'
+                      ? `${block.rows.length} gardien${block.rows.length > 1 ? 's' : ''}`
+                      : `${block.rows.length} (${blockA}A / ${blockD}D)`
 
                     return (
                       <div key={block.key} className="blm-subcard" style={{ marginBottom: 10 }}>
@@ -582,13 +591,62 @@ function CalendarPageInner() {
                                   <span>{r.players?.first_name} {r.players?.last_name}</span>
                                 </div>
                               ))
+                            ) : block.key === 'gardiens' ? (
+                              <>
+                                <div style={{ fontSize: 12.5, color: '#666', marginBottom: 10 }}>
+                                  Associe un gardien à une équipe si la situation s&apos;y prête (niveaux proches, rotation tous les 3 buts...). Laisse non associé sinon.
+                                </div>
+                                {block.rows.map((r) => {
+                                  const isHybrid = !!r.players?.is_hybrid
+                                  return (
+                                    <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '1px solid #eee', flexWrap: 'wrap' }}>
+                                      <button
+                                        onClick={() => handleChangePosition(r)}
+                                        title={isHybrid ? 'Changer le poste (ce match uniquement)' : undefined}
+                                        style={{
+                                          width: 26, height: 26, borderRadius: '50%', border: 'none', flexShrink: 0,
+                                          background: positionStyle('gardien').bg, color: positionStyle('gardien').color, fontWeight: 800, fontSize: 12,
+                                          cursor: isHybrid ? 'pointer' : 'default',
+                                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        }}
+                                      >
+                                        G
+                                      </button>
+                                      <span style={{ flex: 1, fontWeight: 600, fontSize: 14.5, minWidth: 120 }}>
+                                        {r.players?.first_name} {r.players?.last_name}
+                                      </span>
+                                      <button
+                                        onClick={() => handleSetGoalieTeam(r, 'blanc')}
+                                        style={{
+                                          padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                                          border: '1px solid rgba(0,0,0,0.25)',
+                                          background: r.team === 'blanc' ? teams.blancColor : '#fff',
+                                          color: r.team === 'blanc' ? '#1A1A1A' : '#999',
+                                        }}
+                                      >
+                                        {teams.blancName}
+                                      </button>
+                                      <button
+                                        onClick={() => handleSetGoalieTeam(r, 'noir')}
+                                        style={{
+                                          padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                                          border: `1px solid ${teams.noirColor}`,
+                                          background: r.team === 'noir' ? teams.noirColor : '#fff',
+                                          color: r.team === 'noir' ? '#fff' : '#999',
+                                        }}
+                                      >
+                                        {teams.noirName}
+                                      </button>
+                                    </div>
+                                  )
+                                })}
+                              </>
                             ) : (
                               <>
                                 <div style={{ fontSize: 12.5, color: '#666', marginBottom: 10 }}>
                                   Effectif {block.label}{' '}
-                                  {blockA > 0 && <><strong>{blockA} Attaquant{blockA > 1 ? 's' : ''}</strong>{(blockD > 0 || blockG > 0) ? ' • ' : ''}</>}
-                                  {blockD > 0 && <><strong>{blockD} Défenseur{blockD > 1 ? 's' : ''}</strong>{blockG > 0 ? ' • ' : ''}</>}
-                                  {blockG > 0 && <strong>{blockG} Gardien{blockG > 1 ? 's' : ''}</strong>}
+                                  {blockA > 0 && <><strong>{blockA} Attaquant{blockA > 1 ? 's' : ''}</strong>{blockD > 0 ? ' • ' : ''}</>}
+                                  {blockD > 0 && <strong>{blockD} Défenseur{blockD > 1 ? 's' : ''}</strong>}
                                 </div>
                                 {[...block.rows]
                                   .sort((a, b) => positionRank(effectivePosition(a)) - positionRank(effectivePosition(b)))
