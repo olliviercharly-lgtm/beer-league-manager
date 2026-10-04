@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import ShareButton from '@/app/components/ShareButton'
@@ -10,11 +10,9 @@ import { effectiveIsAdmin } from '@/lib/viewRole'
 import { useGameNumbers } from '@/lib/useGameNumbers'
 
 const CLUB_BLUE = '#003F6E'
-const CLUB_GOLD = '#C9A227'
 
 type Player = { id: string; first_name: string; last_name: string; team: string; role?: string; league_id?: string }
 type Training = { id: string; date_time: string; location: string }
-type Result = { id: string; training_id: string; score_noir: number; score_blanc: number }
 type Article = {
   id: string
   theme: string
@@ -89,21 +87,6 @@ function dailySuggestions(theme: string, count = 3): string[] {
   return picked
 }
 
-function SuggestionChip({ onClick, children }: { onClick: () => void; children: ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        textAlign: 'left', padding: '10px 12px', borderRadius: 10, border: '1px solid #ddd',
-        background: '#fff', cursor: 'pointer', fontSize: 13.5, color: '#333',
-      }}
-    >
-      {children}
-    </button>
-  )
-}
-
 const EMOJIS = ['👏', '🔥', '😂']
 
 export default function GazettePage() {
@@ -112,7 +95,6 @@ export default function GazettePage() {
   const [me, setMe] = useState<Player | null>(null)
   const [players, setPlayers] = useState<Player[]>([])
   const [trainings, setTrainings] = useState<Training[]>([])
-  const [results, setResults] = useState<Result[]>([])
   const [articles, setArticles] = useState<Article[]>([])
   const [reactions, setReactions] = useState<Reaction[]>([])
   const [loading, setLoading] = useState(true)
@@ -132,18 +114,16 @@ export default function GazettePage() {
   async function loadAll() {
     setLoading(true)
 
-    const [userResult, playersResult, trainingsResult, resultsResult, articlesResult] = await Promise.all([
+    const [userResult, playersResult, trainingsResult, articlesResult] = await Promise.all([
       supabase.auth.getUser(),
       supabase.from('players').select('id, first_name, last_name, team').order('first_name', { ascending: true }),
       supabase.from('trainings').select('id, date_time, location').order('date_time', { ascending: false }),
-      supabase.from('results').select('id, training_id, score_noir, score_blanc'),
       supabase.from('articles').select('id, theme, title, body, author_id, created_at').order('created_at', { ascending: false }),
     ])
 
     const user = userResult.data.user
     setPlayers(playersResult.data || [])
     setTrainings(trainingsResult.data || [])
-    setResults(resultsResult.data || [])
     setArticles(articlesResult.data || [])
 
     const articleIds = (articlesResult.data || []).map((a) => a.id)
@@ -172,22 +152,6 @@ export default function GazettePage() {
     if (filterTheme === 'all') return articles
     return articles.filter((a) => a.theme === filterTheme)
   }, [articles, filterTheme])
-
-  const lastPlayedMatch = useMemo(() => {
-    const withResult = trainings
-      .filter((t) => results.some((r) => r.training_id === t.id))
-      .sort((a, b) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime())
-    const training = withResult[0]
-    if (!training) return null
-    const result = results.find((r) => r.training_id === training.id)
-    if (!result) return null
-    return { training, result }
-  }, [trainings, results])
-
-  const featuredPlayer = useMemo(() => {
-    if (players.length === 0) return null
-    return players[dayIndex(players.length, 7)]
-  }, [players])
 
   function playerName(id: string) {
     const p = players.find((pl) => pl.id === id)
@@ -230,16 +194,6 @@ export default function GazettePage() {
 
   function togglePlayerSelection(id: string) {
     setSelectedPlayerIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
-  }
-
-  function applySuggestion(opts: { theme: string; trainingId?: string; playerIds?: string[]; instructions: string }) {
-    setShowForm(true)
-    setGenTheme(opts.theme)
-    setDraft(null)
-    setGenError('')
-    setSelectedTrainingId(opts.trainingId || '')
-    setSelectedPlayerIds(opts.playerIds || [])
-    setInstructions(opts.instructions)
   }
 
   async function handleGenerate() {
@@ -330,41 +284,6 @@ export default function GazettePage() {
             <option key={t.value} value={t.value}>{t.label}</option>
           ))}
         </select>
-
-        {(lastPlayedMatch || featuredPlayer) && (
-          <div className="blm-card" style={{ marginBottom: 20, borderLeft: `4px solid ${CLUB_GOLD}` }}>
-            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 10, color: CLUB_BLUE }}>💡 Idées du jour</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {lastPlayedMatch && (
-                <SuggestionChip
-                  onClick={() => applySuggestion({
-                    theme: 'resume_match',
-                    trainingId: lastPlayedMatch.training.id,
-                    instructions: `Concentre-toi sur le score du Match #${gameNumbers[lastPlayedMatch.training.id] ?? ''} (${lastPlayedMatch.result.score_noir} - ${lastPlayedMatch.result.score_blanc}) et raconte-le comme si c'était une finale.`,
-                  })}
-                >
-                  🏒 Écrire le résumé du Match #{gameNumbers[lastPlayedMatch.training.id] ?? '?'} ({lastPlayedMatch.result.score_noir}-{lastPlayedMatch.result.score_blanc})
-                </SuggestionChip>
-              )}
-              {featuredPlayer && (
-                <SuggestionChip
-                  onClick={() => applySuggestion({
-                    theme: 'interview',
-                    playerIds: [featuredPlayer.id],
-                    instructions: `Fais un portrait/interview surprise de ${featuredPlayer.first_name} ${featuredPlayer.last_name}, jamais mis en avant récemment.`,
-                  })}
-                >
-                  🎤 Interview surprise de {featuredPlayer.first_name} {featuredPlayer.last_name}
-                </SuggestionChip>
-              )}
-              {dailySuggestions('autre', 2).map((s, i) => (
-                <SuggestionChip key={i} onClick={() => applySuggestion({ theme: 'autre', instructions: s })}>
-                  ✍️ {s}
-                </SuggestionChip>
-              ))}
-            </div>
-          </div>
-        )}
 
         <button
           onClick={() => setShowForm((s) => !s)}
