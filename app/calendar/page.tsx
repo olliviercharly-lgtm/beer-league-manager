@@ -593,13 +593,10 @@ function CalendarPageInner() {
                               ))
                             ) : block.key === 'gardiens' ? (
                               <>
-                                <div style={{ fontSize: 12.5, color: '#666', marginBottom: 10 }}>
-                                  Associe un gardien à une équipe si la situation s&apos;y prête (niveaux proches, rotation tous les 3 buts...). Laisse non associé sinon.
-                                </div>
                                 {block.rows.map((r) => {
                                   const isHybrid = !!r.players?.is_hybrid
                                   return (
-                                    <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '1px solid #eee', flexWrap: 'wrap' }}>
+                                    <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '1px solid #eee' }}>
                                       <button
                                         onClick={() => handleChangePosition(r)}
                                         title={isHybrid ? 'Changer le poste (ce match uniquement)' : undefined}
@@ -612,31 +609,33 @@ function CalendarPageInner() {
                                       >
                                         G
                                       </button>
-                                      <span style={{ flex: 1, fontWeight: 600, fontSize: 14.5, minWidth: 120 }}>
+                                      <span style={{ flex: 1, fontWeight: 600, fontSize: 14.5, minWidth: 0 }}>
                                         {r.players?.first_name} {r.players?.last_name}
                                       </span>
-                                      <button
-                                        onClick={() => handleSetGoalieTeam(r, 'blanc')}
-                                        style={{
-                                          padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                                          border: '1px solid rgba(0,0,0,0.25)',
-                                          background: r.team === 'blanc' ? teams.blancColor : '#fff',
-                                          color: r.team === 'blanc' ? '#1A1A1A' : '#999',
-                                        }}
-                                      >
-                                        {teams.blancName}
-                                      </button>
-                                      <button
-                                        onClick={() => handleSetGoalieTeam(r, 'noir')}
-                                        style={{
-                                          padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                                          border: `1px solid ${teams.noirColor}`,
-                                          background: r.team === 'noir' ? teams.noirColor : '#fff',
-                                          color: r.team === 'noir' ? '#fff' : '#999',
-                                        }}
-                                      >
-                                        {teams.noirName}
-                                      </button>
+                                      <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                                        <button
+                                          onClick={() => handleSetGoalieTeam(r, 'blanc')}
+                                          style={{
+                                            padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+                                            border: '1px solid rgba(0,0,0,0.25)',
+                                            background: r.team === 'blanc' ? teams.blancColor : '#fff',
+                                            color: r.team === 'blanc' ? '#1A1A1A' : '#999',
+                                          }}
+                                        >
+                                          {teams.blancName}
+                                        </button>
+                                        <button
+                                          onClick={() => handleSetGoalieTeam(r, 'noir')}
+                                          style={{
+                                            padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+                                            border: `1px solid ${teams.noirColor}`,
+                                            background: r.team === 'noir' ? teams.noirColor : '#fff',
+                                            color: r.team === 'noir' ? '#fff' : '#999',
+                                          }}
+                                        >
+                                          {teams.noirName}
+                                        </button>
+                                      </div>
                                     </div>
                                   )
                                 })}
