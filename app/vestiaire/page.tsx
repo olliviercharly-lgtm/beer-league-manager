@@ -115,15 +115,12 @@ function VestiaireContent() {
       .filter((r) => r.count > 0)
       .sort((a, b) => b.count - a.count || a.player.first_name.localeCompare(b.player.first_name))
     // Rang partagé en cas d'égalité (deux joueurs à 4 packs sont tous les deux 2e)
-    let lastCount = -1
-    let lastRank = 0
-    return ranked.map((r, i) => {
-      if (r.count !== lastCount) {
-        lastRank = i + 1
-        lastCount = r.count
-      }
-      return { ...r, rank: lastRank }
-    })
+    const withRanks: { player: Player; count: number; rank: number }[] = []
+    for (let i = 0; i < ranked.length; i++) {
+      const sameAsPrevious = i > 0 && ranked[i].count === ranked[i - 1].count
+      withRanks.push({ ...ranked[i], rank: sameAsPrevious ? withRanks[i - 1].rank : i + 1 })
+    }
+    return withRanks
   }, [players, beerCounts])
 
   function openPlayer(id: string, edit?: boolean) {
