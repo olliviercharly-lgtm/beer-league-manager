@@ -7,6 +7,7 @@ import NavBar from '@/app/components/NavBar'
 import { SkeletonList } from '@/app/components/SkeletonCard'
 import PlayerModal from './PlayerModal'
 import { useLeagueTeams, getContrastText } from '@/lib/useLeagueTeams'
+import { loadBeerCounts, packsLabel, seasonLabel } from '@/lib/beerStats'
 
 type Player = {
   id: string
@@ -37,6 +38,8 @@ function VestiaireContent() {
   const [attendance, setAttendance] = useState<AttendanceRow[]>([])
   const [results, setResults] = useState<ResultRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [beerCounts, setBeerCounts] = useState<Record<string, number>>({})
+  const [showFullBeerRanking, setShowFullBeerRanking] = useState(false)
   const [search, setSearch] = useState('')
   const [teamFilter, setTeamFilter] = useState<'all' | 'noir' | 'blanc'>('all')
   const [positionFilter, setPositionFilter] = useState<'all' | 'attaquant' | 'defenseur' | 'gardien'>('all')
@@ -46,17 +49,19 @@ function VestiaireContent() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const [meResult, playersResult, attendanceResult, resultsResult] = await Promise.all([
+      const [meResult, playersResult, attendanceResult, resultsResult, beerResult] = await Promise.all([
         supabase.from('players').select('id').eq('auth_user_id', user.id).single(),
         supabase.from('players').select('id, auth_user_id, first_name, last_name, number, team, position').order('first_name', { ascending: true }),
         supabase.from('attendance').select('player_id, training_id, status, team').eq('status', 'present'),
         supabase.from('results').select('training_id, score_noir, score_blanc'),
+        loadBeerCounts(supabase),
       ])
 
       setMe(meResult.data)
       setPlayers(playersResult.data || [])
       setAttendance(attendanceResult.data || [])
       setResults(resultsResult.data || [])
+      setBeerCounts(beerResult)
 
       setLoading(false)
     }
@@ -104,6 +109,23 @@ function VestiaireContent() {
     return list
   }, [players, teamFilter, positionFilter, search, me])
 
+  const beerRanking = useMemo(() => {
+    const ranked = players
+      .map((p) => ({ player: p, count: beerCounts[p.id] || 0 }))
+      .filter((r) => r.count > 0)
+      .sort((a, b) => b.count - a.count || a.player.first_name.localeCompare(b.player.first_name))
+    // Rang partagé en cas d'égalité (deux joueurs à 4 packs sont tous les deux 2e)
+    let lastCount = -1
+    let lastRank = 0
+    return ranked.map((r, i) => {
+      if (r.count !== lastCount) {
+        lastRank = i + 1
+        lastCount = r.count
+      }
+      return { ...r, rank: lastRank }
+    })
+  }, [players, beerCounts])
+
   function openPlayer(id: string, edit?: boolean) {
     router.push(`/vestiaire?player=${id}${edit ? '&edit=1' : ''}`, { scroll: false })
   }
@@ -127,6 +149,51 @@ function VestiaireContent() {
     <div>
       <NavBar />
       <div style={{ maxWidth: 900, margin: '40px auto', fontFamily: 'sans-serif', padding: '0 16px' }}>
+        <div className="blm-card" style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+            <div style={{ fontWeight: 'bold', fontSize: 16 }}>🍺 Les mécènes de la saison</div>
+            <div style={{ fontSize: 12, color: '#888' }}>Saison {seasonLabel()}</div>
+          </div>
+          {beerRanking.length === 0 ? (
+            <div style={{ fontSize: 14, color: '#666' }}>
+              Aucun pack ramené pour l&apos;instant cette saison. Le premier mécène entrera dans la légende.
+            </div>
+          ) : (
+            <>
+              {(showFullBeerRanking ? beerRanking : beerRanking.filter((r) => r.rank <= 3)).map((r) => {
+                const medal = r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : `${r.rank}.`
+                const isMeRow = r.player.id === me?.id
+                return (
+                  <div
+                    key={r.player.id}
+                    onClick={() => openPlayer(r.player.id)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, cursor: 'pointer',
+                      background: isMeRow ? '#FBF3DD' : 'transparent',
+                    }}
+                  >
+                    <span style={{ width: 28, textAlign: 'center', fontSize: r.rank <= 3 ? 20 : 14, fontWeight: 700, color: '#666', flexShrink: 0 }}>{medal}</span>
+                    <span style={{ flex: 1, minWidth: 0, fontWeight: r.rank === 1 ? 700 : 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {r.player.first_name} {r.player.last_name}
+                      {isMeRow && <span style={{ fontSize: 11, color: '#8A6D1A', marginLeft: 6 }}>(moi)</span>}
+                    </span>
+                    <span style={{ fontWeight: 700, color: '#8A6D1A', whiteSpace: 'nowrap' }}>{packsLabel(r.count)}</span>
+                  </div>
+                )
+              })}
+              {beerRanking.some((r) => r.rank > 3) && (
+                <button
+                  type="button"
+                  onClick={() => setShowFullBeerRanking((v) => !v)}
+                  style={{ marginTop: 6, background: 'none', border: 'none', padding: 0, color: CLUB_BLUE, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+                >
+                  {showFullBeerRanking ? 'Réduire ▴' : 'Voir le classement complet ▾'}
+                </button>
+              )}
+            </>
+          )}
+        </div>
+
         <div className="blm-card" style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
           <input
             placeholder="Rechercher un joueur..."
@@ -229,6 +296,12 @@ function VestiaireContent() {
                     <div style={{ fontSize: 11, color: '#888' }}>Ratio V/D</div>
                   </div>
                 </div>
+
+                {(beerCounts[player.id] || 0) > 0 && (
+                  <div style={{ textAlign: 'center', fontSize: 13, color: '#8A6D1A', fontWeight: 600, marginTop: -4, marginBottom: 12 }}>
+                    🍺 {packsLabel(beerCounts[player.id])} cette saison
+                  </div>
+                )}
 
                 <div style={{ display: 'flex', justifyContent: 'center', gap: 16, fontSize: 13 }}>
                   <button

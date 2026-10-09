@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useLeagueTeams, getContrastText } from '@/lib/useLeagueTeams'
+import { loadBeerCounts, packsLabel } from '@/lib/beerStats'
 
 const CLUB_BLUE = '#003F6E'
 const CLUB_GOLD = '#C9A227'
@@ -51,6 +52,7 @@ export default function PlayerModal({ playerId, initialEditing, onClose }: Props
   const [notes, setNotes] = useState<Note[]>([])
   const [attendance, setAttendance] = useState<AttendanceRow[]>([])
   const [results, setResults] = useState<ResultRow[]>([])
+  const [beerCount, setBeerCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(!!initialEditing)
   const [saving, setSaving] = useState(false)
@@ -111,6 +113,9 @@ export default function PlayerModal({ playerId, initialEditing, onClose }: Props
       .from('results')
       .select('training_id, score_noir, score_blanc')
     setResults(resultsData || [])
+
+    const beer = await loadBeerCounts(supabase, playerId)
+    setBeerCount(beer[playerId] || 0)
 
     setLoading(false)
   }
@@ -365,6 +370,10 @@ export default function PlayerModal({ playerId, initialEditing, onClose }: Props
                       <div style={{ fontWeight: 'bold', fontSize: 18 }}>{stats.ratio}%</div>
                       <div style={{ fontSize: 12, color: '#888' }}>Ratio V/D</div>
                     </div>
+                  </div>
+
+                  <div style={{ textAlign: 'center', fontSize: 13, color: beerCount > 0 ? '#8A6D1A' : '#999', fontWeight: 600, paddingBottom: 4 }}>
+                    🍺 {beerCount > 0 ? `${packsLabel(beerCount)} ramené${beerCount > 1 ? 's' : ''} cette saison` : 'Aucun pack ramené cette saison'}
                   </div>
 
                   {isOwner && (
