@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { generateJson } from '@/lib/gemini'
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
+export const maxDuration = 60
 
 const GEM_PERSONA = `Tu es le rédacteur en chef de "La Gazette", le journal parodique et humoristique d'un club de hockey amateur du dimanche soir ("Beer League Manager"). Ton ton est vif, plein de vannes et de private jokes de vestiaire, façon parodie de presse sportive. Tu écris toujours en français.`
 
@@ -128,31 +128,16 @@ ${antiRepetitionBlock}
 Écris un article complet (plusieurs paragraphes, pas un simple résumé de 2 lignes), drôle, avec une vraie accroche, et avec un angle différent des articles précédents cités ci-dessus. Réponds uniquement au format JSON suivant, sans aucun texte autour :
 {"title": "titre accrocheur", "body": "corps de l'article en plusieurs paragraphes séparés par des sauts de ligne"}`
 
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-flash-latest',
-    generationConfig: { responseMimeType: 'application/json' },
-  })
-
-  let lastErr: unknown = null
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      const result = await model.generateContent(prompt)
-      const text = result.response.text()
-      const parsed = JSON.parse(text)
-      return NextResponse.json({ title: parsed.title, body: parsed.body })
-    } catch (err) {
-      lastErr = err
-      const message = err instanceof Error ? err.message : ''
-      if (message.includes('503') || message.includes('overloaded') || message.includes('high demand')) {
-        await new Promise((resolve) => setTimeout(resolve, 1500 * (attempt + 1)))
-        continue
-      }
-      break
-    }
+  try {
+    const data = await generateJson<{ title?: string; body?: string }>(
+      prompt,
+      (d) => typeof d?.title === 'string' && typeof d?.body === 'string' && d.body.trim().length > 0
+    )
+    return NextResponse.json({ title: data.title, body: data.body })
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Erreur de génération.' },
+      { status: 503 }
+    )
   }
-
-  return NextResponse.json(
-    { error: lastErr instanceof Error ? lastErr.message : 'Erreur de génération.' },
-    { status: 500 }
-  )
 }

@@ -242,9 +242,9 @@ export default function GazettePage() {
           tone,
         }),
       })
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setGenError(data.error || 'Erreur de génération.')
+        setGenError(data.error || "La rédaction n'a pas répondu à temps. Réessaie dans quelques instants.")
       } else {
         setDraft({ title: data.title, body: data.body })
       }

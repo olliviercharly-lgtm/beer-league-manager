@@ -174,7 +174,7 @@ export default function PlayerModal({ playerId, initialEditing, onClose }: Props
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ playerId: player.id, instructions: bioInstructions }),
       })
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
       if (!res.ok) {
         setBioGenError(data.error || 'Erreur de génération.')
       } else {

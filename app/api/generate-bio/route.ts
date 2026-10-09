@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { generateJson } from '@/lib/gemini'
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
+export const maxDuration = 60
 
 const GEM_PERSONA = `Tu rédiges les biographies affichées sur les fiches joueurs d'une application de gestion pour un club de hockey amateur du dimanche soir ("Beer League Manager"). Le ton est chaleureux et un brin humoristique, comme une fiche de présentation officielle mais version amateur et complice. Tu écris toujours en français, à la troisième personne, en 2 à 4 phrases maximum : c'est une courte bio de fiche joueur, pas un article.`
 
@@ -65,31 +65,16 @@ ${instructions ? `Consignes du joueur pour orienter la bio (n'affiche jamais ce 
 Rédige la nouvelle bio. Réponds uniquement au format JSON suivant, sans aucun texte autour :
 {"bio": "texte de la bio"}`
 
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-flash-latest',
-    generationConfig: { responseMimeType: 'application/json' },
-  })
-
-  let lastErr: unknown = null
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      const result = await model.generateContent(prompt)
-      const text = result.response.text()
-      const parsed = JSON.parse(text)
-      return NextResponse.json({ bio: parsed.bio })
-    } catch (err) {
-      lastErr = err
-      const message = err instanceof Error ? err.message : ''
-      if (message.includes('503') || message.includes('overloaded') || message.includes('high demand')) {
-        await new Promise((resolve) => setTimeout(resolve, 1500 * (attempt + 1)))
-        continue
-      }
-      break
-    }
+  try {
+    const data = await generateJson<{ bio?: string }>(
+      prompt,
+      (d) => typeof d?.bio === 'string' && d.bio.trim().length > 0
+    )
+    return NextResponse.json({ bio: data.bio })
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Erreur de génération.' },
+      { status: 503 }
+    )
   }
-
-  return NextResponse.json(
-    { error: lastErr instanceof Error ? lastErr.message : 'Erreur de génération.' },
-    { status: 500 }
-  )
 }
