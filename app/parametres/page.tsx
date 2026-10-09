@@ -212,7 +212,7 @@ export default function ParametresPage() {
           </div>
 
           <div className="blm-card" style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            <div style={{ flex: 1, minWidth: 160 }}>
+            <div style={{ flex: '1 1 200px', minWidth: 0 }}>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 'bold', color: '#666', marginBottom: 6, textTransform: 'uppercase' }}>
                 Nom équipe 1
               </label>
@@ -225,7 +225,7 @@ export default function ParametresPage() {
               <label style={{ display: 'block', fontSize: 12, fontWeight: 'bold', color: '#666', marginBottom: 6, textTransform: 'uppercase' }}>
                 Couleur équipe 1
               </label>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {COLOR_PALETTE.map((c) => (
                   <button
                     key={c}
@@ -233,7 +233,7 @@ export default function ParametresPage() {
                     onClick={() => setTeamNoirColor(c)}
                     aria-label={c}
                     style={{
-                      width: 32, height: 32, borderRadius: '50%', cursor: 'pointer',
+                      width: 30, height: 30, borderRadius: '50%', cursor: 'pointer', flexShrink: 0,
                       background: c,
                       border: c === teamNoirColor ? `3px solid ${CLUB_BLUE}` : '1px solid #ccc',
                     }}
@@ -242,7 +242,7 @@ export default function ParametresPage() {
               </div>
             </div>
 
-            <div style={{ flex: 1, minWidth: 160 }}>
+            <div style={{ flex: '1 1 200px', minWidth: 0 }}>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 'bold', color: '#666', marginBottom: 6, textTransform: 'uppercase' }}>
                 Nom équipe 2
               </label>
@@ -255,7 +255,7 @@ export default function ParametresPage() {
               <label style={{ display: 'block', fontSize: 12, fontWeight: 'bold', color: '#666', marginBottom: 6, textTransform: 'uppercase' }}>
                 Couleur équipe 2
               </label>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {COLOR_PALETTE.map((c) => (
                   <button
                     key={c}
@@ -263,7 +263,7 @@ export default function ParametresPage() {
                     onClick={() => setTeamBlancColor(c)}
                     aria-label={c}
                     style={{
-                      width: 32, height: 32, borderRadius: '50%', cursor: 'pointer',
+                      width: 30, height: 30, borderRadius: '50%', cursor: 'pointer', flexShrink: 0,
                       background: c,
                       border: c === teamBlancColor ? `3px solid ${CLUB_BLUE}` : '1px solid #ccc',
                     }}
@@ -277,17 +277,17 @@ export default function ParametresPage() {
             <label style={{ display: 'block', fontSize: 12, fontWeight: 'bold', color: '#666', marginBottom: 6, textTransform: 'uppercase' }}>
               Code d&apos;invitation
             </label>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <input
                 value={inviteCode}
                 onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                 required
-                style={{ flex: 1, padding: 10, border: '1px solid #ccc', borderRadius: 8, fontFamily: 'monospace', letterSpacing: 1 }}
+                style={{ flex: '1 1 160px', minWidth: 0, boxSizing: 'border-box', padding: 10, border: '1px solid #ccc', borderRadius: 8, fontFamily: 'monospace', letterSpacing: 1 }}
               />
               <button
                 type="button"
                 onClick={handleRegenerateCode}
-                style={{ padding: '0 14px', borderRadius: 8, border: `1px solid ${CLUB_BLUE}`, background: '#fff', color: CLUB_BLUE, cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}
+                style={{ padding: '0 14px', minHeight: 40, borderRadius: 8, border: `1px solid ${CLUB_BLUE}`, background: '#fff', color: CLUB_BLUE, cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}
               >
                 🔄 Régénérer
               </button>
@@ -302,7 +302,7 @@ export default function ParametresPage() {
                   readOnly
                   value={inviteLink}
                   onFocus={(e) => e.target.select()}
-                  style={{ flex: '1 1 220px', padding: 10, border: '1px solid #ccc', borderRadius: 8, fontSize: 12, color: '#555' }}
+                  style={{ flex: '1 1 220px', minWidth: 0, boxSizing: 'border-box', padding: 10, border: '1px solid #ccc', borderRadius: 8, fontSize: 12, color: '#555' }}
                 />
                 <button
                   type="button"
@@ -351,19 +351,19 @@ export default function ParametresPage() {
             <div
               key={p.id}
               style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px 12px', flexWrap: 'wrap',
                 padding: '12px 16px', borderBottom: i < players.length - 1 ? '1px solid #eee' : 'none',
               }}
             >
-              <div>
-                <div style={{ fontWeight: 600 }}>{p.first_name} {p.last_name}</div>
+              <div style={{ flex: '1 1 140px', minWidth: 0 }}>
+                <div style={{ fontWeight: 600, overflowWrap: 'anywhere' }}>{p.first_name} {p.last_name}</div>
                 <div style={{ fontSize: 12, color: '#888' }}>
                   {p.team === 'noir' ? teamNoirName : teamBlancName}
                   {p.role === 'super_admin' && ' · Super admin'}
                   {p.role === 'admin' && ' · Admin'}
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end', marginLeft: 'auto' }}>
                 <button
                   type="button"
                   onClick={() => handleToggleHybrid(p.id, p.is_hybrid)}
