@@ -124,7 +124,9 @@ ${instructionsBlock}
 
 ${antiRepetitionBlock}
 
-Respecte le ton, le type d'article, le format et la dose de vannes ci-dessus (le format de longueur prime sur toute autre indication de longueur), sois drôle, et prends un angle différent des articles précédents cités ci-dessus. Réponds uniquement au format JSON suivant, sans aucun texte autour :
+${themeKey === 'interview' ? `Mise en page de l'interview (obligatoire) : après l'intro, écris chaque question et chaque réponse sur sa propre ligne, jamais dans le même paragraphe. Les questions sont en gras avec deux astérisques et préfixées par le nom du journal (ex. **La Gazette : ta question ?**), les réponses commencent par le nom de l'interviewé en italique avec un astérisque (ex. *Prénom Nom :* sa réponse). Sépare chaque question et chaque réponse par une ligne vide.
+
+` : ''}Respecte le ton, le type d'article, le format et la dose de vannes ci-dessus (le format de longueur prime sur toute autre indication de longueur), sois drôle, et prends un angle différent des articles précédents cités ci-dessus. Réponds uniquement au format JSON suivant, sans aucun texte autour :
 {"title": "titre accrocheur", "body": "corps de l'article en plusieurs paragraphes séparés par des sauts de ligne"}`
 
   try {
@@ -132,9 +134,16 @@ Respecte le ton, le type d'article, le format et la dose de vannes ci-dessus (le
       prompt,
       (d) => typeof d?.title === 'string' && typeof d?.body === 'string' && d.body.trim().length > 0
     )
+    // Une ligne vide entre chaque paragraphe (questions et réponses séparées pour les interviews)
+    const cleanBody = (data.body as string)
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .join('\n\n')
+
     return NextResponse.json({
       title: data.title,
-      body: data.body,
+      body: cleanBody,
       tone: { key: selectedTone.key, emoji: selectedTone.emoji, label: selectedTone.label },
     })
   } catch (err) {

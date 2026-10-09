@@ -19,6 +19,7 @@ import NavBar from '@/app/components/NavBar'
 import { SkeletonList } from '@/app/components/SkeletonCard'
 import { effectiveIsAdmin } from '@/lib/viewRole'
 import { useGameNumbers } from '@/lib/useGameNumbers'
+import { renderInline, stripFormatting } from '@/lib/richText'
 
 const CLUB_BLUE = '#003F6E'
 
@@ -621,7 +622,7 @@ export default function GazettePage() {
                     }}
                   >
                     {lines.map((para, i) => (
-                      <p key={i} style={{ marginBottom: 12, lineHeight: 1.5 }}>{para}</p>
+                      <p key={i} style={{ marginBottom: 12, lineHeight: 1.5 }}>{renderInline(para)}</p>
                     ))}
                   </div>
 
@@ -653,7 +654,7 @@ export default function GazettePage() {
                       Lire la suite →
                     </Link>
 
-                    <ShareButton title={article.title} path={`/gazette/${article.id}`} excerpt={lines[0]} />
+                    <ShareButton title={article.title} path={`/gazette/${article.id}`} excerpt={stripFormatting(lines[0] ?? '')} />
 
                     {canEdit && (
                       <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>

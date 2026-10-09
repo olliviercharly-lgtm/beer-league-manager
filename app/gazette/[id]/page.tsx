@@ -3,6 +3,7 @@ import NavBar from '@/app/components/NavBar'
 import ShareButton from '@/app/components/ShareButton'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
+import { renderInline, stripFormatting } from '@/lib/richText'
 
 const THEMES: Record<string, string> = {
   resume_match: 'Résumé de match',
@@ -34,7 +35,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const data = await getArticle(id)
   if (!data) return { title: 'Article introuvable — La Gazette' }
 
-  const description = data.article.body.split('\n').filter(Boolean)[0]?.slice(0, 160) ?? ''
+  const description = stripFormatting(data.article.body.split('\n').filter(Boolean)[0] ?? '').slice(0, 160)
 
   return {
     title: `${data.article.title} — La Gazette`,
@@ -62,10 +63,10 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
             Par {authorName} · {new Date(article.created_at).toLocaleDateString('fr-FR')}
           </div>
           {lines.map((para: string, i: number) => (
-            <p key={i} style={{ marginBottom: 12, lineHeight: 1.5 }}>{para}</p>
+            <p key={i} style={{ marginBottom: 12, lineHeight: 1.5 }}>{renderInline(para)}</p>
           ))}
           <div style={{ marginTop: 16 }}>
-            <ShareButton title={article.title} path={`/gazette/${article.id}`} excerpt={lines[0]} />
+            <ShareButton title={article.title} path={`/gazette/${article.id}`} excerpt={stripFormatting(lines[0] ?? '')} />
           </div>
         </div>
       </div>
