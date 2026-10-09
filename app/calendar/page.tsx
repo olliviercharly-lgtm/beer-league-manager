@@ -628,7 +628,7 @@ function CalendarPageInner() {
                     <div style={{ fontSize: 14, lineHeight: 1.4 }}>
                       {trainingBeerNames.length > 0 ? (
                         <>
-                          <strong>Pack assuré</strong> par {trainingBeerNames.join(', ')}. Merci {trainingBeerNames.length > 1 ? 'à eux' : 'à lui'} !
+                          <strong>Pack assuré</strong> par {trainingBeerNames.join(', ')}
                         </>
                       ) : (
                         <span style={{ color: '#666' }}>Personne ne s&apos;est encore proposé pour ramener le pack de bières.</span>
