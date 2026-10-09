@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import NavBar from '@/app/components/NavBar'
 
 const CLUB_BLUE = '#003F6E'
@@ -183,6 +184,19 @@ export default function ParametresPage() {
       <NavBar />
       <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 16px 60px' }}>
         <h1 style={{ fontSize: 22, marginBottom: 20 }}>🏆 Gérer la ligue</h1>
+
+        <Link
+          href="/redaction"
+          className="blm-card"
+          style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, textDecoration: 'none', color: 'inherit' }}
+        >
+          <span style={{ fontSize: 26 }}>🖋️</span>
+          <span style={{ flex: 1 }}>
+            <span style={{ display: 'block', fontWeight: 700, color: CLUB_BLUE }}>Salle de rédaction</span>
+            <span style={{ display: 'block', fontSize: 13, color: '#666' }}>Personnalité de l&apos;IA, tons des articles et consignes de la Gazette</span>
+          </span>
+          <span style={{ color: CLUB_BLUE, fontSize: 18 }}>›</span>
+        </Link>
 
         <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           <div className="blm-card">

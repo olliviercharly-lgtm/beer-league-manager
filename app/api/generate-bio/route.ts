@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { generateJson } from '@/lib/gemini'
+import { loadEditorial } from '@/lib/editorialServer'
 
 export const maxDuration = 60
-
-const GEM_PERSONA = `Tu rédiges les biographies affichées sur les fiches joueurs d'une application de gestion pour un club de hockey amateur du dimanche soir ("Beer League Manager"). Le ton est chaleureux et un brin humoristique, comme une fiche de présentation officielle mais version amateur et complice. Tu écris toujours en français, à la troisième personne, en 2 à 4 phrases maximum : c'est une courte bio de fiche joueur, pas un article.`
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -15,7 +14,7 @@ export async function POST(request: Request) {
 
   const { data: me } = await supabase
     .from('players')
-    .select('id')
+    .select('id, league_id')
     .eq('auth_user_id', user.id)
     .single()
 
@@ -55,7 +54,9 @@ export async function POST(request: Request) {
 
   const contextText = `${player.first_name} ${player.last_name} — équipe ${player.team}, ${player.position}${player.style ? `, style: ${player.style}` : ''}${player.hometown ? `, originaire de ${player.hometown}` : ''}${player.joined_year ? `, dans le club depuis ${player.joined_year}` : ''}.${player.bio ? ` Bio actuelle : ${player.bio}` : ''}${trophies ? ` Palmarès : ${trophies}.` : ''}${anecdotes ? ` Anecdotes : ${anecdotes}.` : ''}`
 
-  const prompt = `${GEM_PERSONA}
+  const editorial = await loadEditorial(me.league_id)
+
+  const prompt = `${editorial.bioPersona}
 
 Données disponibles sur le joueur (ne les recopie pas telles quelles, sers-t'en comme matière) :
 ${contextText}

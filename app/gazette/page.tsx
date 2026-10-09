@@ -1,5 +1,6 @@
 'use client'
 
+import { DEFAULT_EDITORIAL, type EditorialTone } from '@/lib/editorial'
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -30,13 +31,6 @@ const THEMES = [
   { value: 'autre', label: 'Autre' },
 ]
 
-const TONES = [
-  { value: 'classique', label: 'Classique (parodie sportive)' },
-  { value: 'sarcastique', label: 'Sarcastique à fond' },
-  { value: 'complot', label: 'Rumeur qui prend des proportions' },
-  { value: 'nostalgique', label: 'Vieux sage du vestiaire' },
-  { value: 'flash', label: 'Flash info punchy' },
-]
 
 const SUGGESTIONS: Record<string, string[]> = {
   resume_match: [
@@ -105,7 +99,8 @@ export default function GazettePage() {
   const [selectedTrainingId, setSelectedTrainingId] = useState('')
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([])
   const [instructions, setInstructions] = useState('')
-  const [tone, setTone] = useState(TONES[0].value)
+  const [tones, setTones] = useState<EditorialTone[]>(DEFAULT_EDITORIAL.tones)
+  const [tone, setTone] = useState(DEFAULT_EDITORIAL.tones[0].key)
   const [generating, setGenerating] = useState(false)
   const [draft, setDraft] = useState<{ title: string; body: string } | null>(null)
   const [genError, setGenError] = useState('')
@@ -115,6 +110,24 @@ export default function GazettePage() {
   const [editTitle, setEditTitle] = useState('')
   const [editBody, setEditBody] = useState('')
   const [savingEdit, setSavingEdit] = useState(false)
+
+  useEffect(() => {
+    async function loadTones() {
+      try {
+        const res = await fetch('/api/editorial')
+        if (!res.ok) return
+        const data = await res.json()
+        const list: EditorialTone[] = data.settings?.tones || []
+        if (list.length > 0) {
+          setTones(list)
+          setTone((current) => (list.some((t) => t.key === current) ? current : list[0].key))
+        }
+      } catch {
+        // on garde les tons par défaut
+      }
+    }
+    loadTones()
+  }, [])
 
   async function loadAll() {
     setLoading(true)
@@ -282,7 +295,7 @@ export default function GazettePage() {
       setInstructions('')
       setSelectedPlayerIds([])
       setSelectedTrainingId('')
-      setTone(TONES[0].value)
+      setTone(tones[0]?.key ?? DEFAULT_EDITORIAL.tones[0].key)
     }
   }
 
@@ -322,6 +335,15 @@ export default function GazettePage() {
         >
           {showForm ? 'Annuler' : '✍️ Générer un article'}
         </button>
+
+        {me && effectiveIsAdmin(me.role) && (
+          <Link
+            href="/redaction"
+            style={{ display: 'inline-block', marginLeft: 12, marginBottom: 24, fontSize: 13, color: CLUB_BLUE, fontWeight: 600, textDecoration: 'none' }}
+          >
+            🖋️ Salle de rédaction
+          </Link>
+        )}
 
         {showForm && (
           <div className="blm-card" style={{ marginBottom: 24 }}>
@@ -426,8 +448,8 @@ export default function GazettePage() {
               onChange={(e) => setTone(e.target.value)}
               style={{ width: '100%', padding: 8, marginBottom: 16, borderRadius: 6 }}
             >
-              {TONES.map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
+              {tones.map((t) => (
+                <option key={t.key} value={t.key}>{t.emoji} {t.label}</option>
               ))}
             </select>
 
