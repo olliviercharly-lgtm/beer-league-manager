@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { generateJson } from '@/lib/gemini'
 import { loadEditorial } from '@/lib/editorialServer'
-import { THEME_KEYS, type ThemeKey } from '@/lib/editorial'
+import { THEME_KEYS, LENGTH_OPTIONS, SPICE_OPTIONS, DEFAULT_LENGTH, DEFAULT_SPICE, SURPRISE_TONE_KEY, type ThemeKey } from '@/lib/editorial'
 
 export const maxDuration = 60
 
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json()
-  const { theme, trainingId, playerIds, instructions, tone } = body
+  const { theme, trainingId, playerIds, instructions, tone, length, spice } = body
 
   if (theme === 'autre' && !instructions?.trim()) {
     return NextResponse.json({ error: "Merci de préciser un sujet pour cet article." }, { status: 400 })
@@ -87,8 +87,12 @@ export async function POST(request: Request) {
     ? (instructions ? `Sujet imposé par le joueur (l'article doit porter précisément sur ce sujet) : ${instructions}` : '')
     : (instructions ? `Consignes du joueur qui demande l'article (n'affiche jamais ce texte tel quel dans l'article, utilise-le seulement pour orienter le ton ou l'angle) : ${instructions}` : '')
 
-  const selectedTone = editorial.tones.find((t) => t.key === tone) || editorial.tones[0]
+  const selectedTone = tone === SURPRISE_TONE_KEY
+    ? editorial.tones[Math.floor(Math.random() * editorial.tones.length)]
+    : editorial.tones.find((t) => t.key === tone) || editorial.tones[0]
   const toneInstruction = selectedTone.prompt
+  const lengthInstruction = (LENGTH_OPTIONS.find((o) => o.key === length) || LENGTH_OPTIONS.find((o) => o.key === DEFAULT_LENGTH)!).prompt
+  const spiceInstruction = (SPICE_OPTIONS.find((o) => o.key === spice) || SPICE_OPTIONS.find((o) => o.key === DEFAULT_SPICE)!).prompt
 
   const { data: recentArticles } = await supabase
     .from('articles')
@@ -109,6 +113,10 @@ Ton à adopter pour cet article précis : ${toneInstruction}
 
 Type d'article demandé pour La Gazette : ${themeInstruction}
 
+${lengthInstruction}
+
+${spiceInstruction}
+
 Données disponibles à exploiter (ne les recopie pas telles quelles, sers-t'en comme matière) :
 ${contextText || 'Aucune donnée spécifique.'}
 
@@ -116,7 +124,7 @@ ${instructionsBlock}
 
 ${antiRepetitionBlock}
 
-Respecte le ton et le type d'article ci-dessus, sois drôle, et prends un angle différent des articles précédents cités ci-dessus. Réponds uniquement au format JSON suivant, sans aucun texte autour :
+Respecte le ton, le type d'article, le format et la dose de vannes ci-dessus (le format de longueur prime sur toute autre indication de longueur), sois drôle, et prends un angle différent des articles précédents cités ci-dessus. Réponds uniquement au format JSON suivant, sans aucun texte autour :
 {"title": "titre accrocheur", "body": "corps de l'article en plusieurs paragraphes séparés par des sauts de ligne"}`
 
   try {
@@ -124,7 +132,11 @@ Respecte le ton et le type d'article ci-dessus, sois drôle, et prends un angle 
       prompt,
       (d) => typeof d?.title === 'string' && typeof d?.body === 'string' && d.body.trim().length > 0
     )
-    return NextResponse.json({ title: data.title, body: data.body })
+    return NextResponse.json({
+      title: data.title,
+      body: data.body,
+      tone: { key: selectedTone.key, emoji: selectedTone.emoji, label: selectedTone.label },
+    })
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Erreur de génération.' },

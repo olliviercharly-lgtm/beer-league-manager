@@ -1,6 +1,16 @@
 'use client'
 
-import { DEFAULT_EDITORIAL, type EditorialTone } from '@/lib/editorial'
+import {
+  DEFAULT_EDITORIAL,
+  DEFAULT_LENGTH,
+  DEFAULT_SPICE,
+  LENGTH_OPTIONS,
+  SPICE_OPTIONS,
+  SURPRISE_TONE_KEY,
+  type EditorialTone,
+  type LengthKey,
+  type SpiceKey,
+} from '@/lib/editorial'
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -102,6 +112,9 @@ export default function GazettePage() {
   const [tones, setTones] = useState<EditorialTone[]>(DEFAULT_EDITORIAL.tones)
   const [tone, setTone] = useState(DEFAULT_EDITORIAL.tones[0].key)
   const [generating, setGenerating] = useState(false)
+  const [length, setLength] = useState<LengthKey>(DEFAULT_LENGTH)
+  const [spice, setSpice] = useState<SpiceKey>(DEFAULT_SPICE)
+  const [surpriseTone, setSurpriseTone] = useState<{ emoji: string; label: string } | null>(null)
   const [draft, setDraft] = useState<{ title: string; body: string } | null>(null)
   const [genError, setGenError] = useState('')
   const [publishing, setPublishing] = useState(false)
@@ -253,6 +266,8 @@ export default function GazettePage() {
           playerIds: (genTheme === 'rumeur_transfert' || genTheme === 'interview') ? selectedPlayerIds : undefined,
           instructions,
           tone,
+          length,
+          spice,
         }),
       })
       const data = await res.json().catch(() => ({}))
@@ -260,6 +275,7 @@ export default function GazettePage() {
         setGenError(data.error || "La rédaction n'a pas répondu à temps. Réessaie dans quelques instants.")
       } else {
         setDraft({ title: data.title, body: data.body })
+        setSurpriseTone(tone === SURPRISE_TONE_KEY && data.tone ? { emoji: data.tone.emoji, label: data.tone.label } : null)
       }
     } catch {
       setGenError('Erreur réseau.')
@@ -451,7 +467,48 @@ export default function GazettePage() {
               {tones.map((t) => (
                 <option key={t.key} value={t.key}>{t.emoji} {t.label}</option>
               ))}
+              <option value={SURPRISE_TONE_KEY}>🎲 Ton surprise (tiré au sort)</option>
             </select>
+
+            <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>Longueur</label>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
+              {LENGTH_OPTIONS.map((o) => (
+                <button
+                  key={o.key}
+                  type="button"
+                  onClick={() => setLength(o.key)}
+                  style={{
+                    padding: '8px 14px', borderRadius: 999, cursor: 'pointer', fontSize: 13,
+                    border: `1px solid ${CLUB_BLUE}`,
+                    background: length === o.key ? CLUB_BLUE : '#fff',
+                    color: length === o.key ? '#fff' : CLUB_BLUE,
+                    fontWeight: length === o.key ? 700 : 500,
+                  }}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+
+            <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>Dose de vannes</label>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
+              {SPICE_OPTIONS.map((o) => (
+                <button
+                  key={o.key}
+                  type="button"
+                  onClick={() => setSpice(o.key)}
+                  style={{
+                    padding: '8px 14px', borderRadius: 999, cursor: 'pointer', fontSize: 13,
+                    border: `1px solid ${CLUB_BLUE}`,
+                    background: spice === o.key ? CLUB_BLUE : '#fff',
+                    color: spice === o.key ? '#fff' : CLUB_BLUE,
+                    fontWeight: spice === o.key ? 700 : 500,
+                  }}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
 
             {genError && <p style={{ color: 'red', marginBottom: 12 }}>{genError}</p>}
 
@@ -469,6 +526,11 @@ export default function GazettePage() {
                 <div style={{ fontSize: 12, color: '#888', marginBottom: 6 }}>
                   Aperçu — tu peux ajuster le texte avant de publier
                 </div>
+                {surpriseTone && (
+                  <div style={{ display: 'inline-block', fontSize: 12, fontWeight: 600, color: CLUB_BLUE, background: '#EAF1FB', borderRadius: 999, padding: '4px 10px', marginBottom: 10 }}>
+                    🎲 Ton tiré au sort : {surpriseTone.emoji} {surpriseTone.label}
+                  </div>
+                )}
                 <input
                   value={draft.title}
                   onChange={(e) => setDraft(draft ? { ...draft, title: e.target.value } : draft)}

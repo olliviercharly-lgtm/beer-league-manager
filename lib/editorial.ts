@@ -104,3 +104,23 @@ export function resolveEditorial(raw: unknown): EditorialSettings {
 export function newToneKey() {
   return `ton_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 }
+
+// Réglages rapides du générateur d'articles (choisis par le joueur à chaque génération)
+export const SURPRISE_TONE_KEY = '__surprise__'
+
+export type LengthKey = 'breve' | 'article' | 'grand_format'
+export const LENGTH_OPTIONS: { key: LengthKey; label: string; prompt: string }[] = [
+  { key: 'breve', label: '⚡ Brève', prompt: "Format brève : 1 à 2 courts paragraphes (environ 80 à 150 mots), qui vont droit au but avec une chute qui claque." },
+  { key: 'article', label: '📰 Article', prompt: "Format article classique : 3 à 5 paragraphes (environ 250 à 400 mots), avec une accroche, un développement et une chute." },
+  { key: 'grand_format', label: '📖 Grand format', prompt: "Format grand reportage : 6 paragraphes ou plus (environ 500 à 800 mots), avec des intertitres en texte simple, des citations imaginaires et plusieurs rebondissements." },
+]
+
+export type SpiceKey = 'gentil' | 'piquant' | 'sans_pitie'
+export const SPICE_OPTIONS: { key: SpiceKey; label: string; prompt: string }[] = [
+  { key: 'gentil', label: '😇 Gentil', prompt: "Dose de vannes : légère et bienveillante. Humour tendre, on valorise les joueurs, les piques restent très douces." },
+  { key: 'piquant', label: '🌶️ Piquant', prompt: "Dose de vannes : piquante. On chambre franchement les ratés, les excuses et la mauvaise foi, tout en restant complice." },
+  { key: 'sans_pitie', label: '🔥 Sans pitié', prompt: "Dose de vannes : maximale. Chambrage sans retenue sur les performances, les ratés, les excuses et la mauvaise foi, avec des punchlines qui piquent. Toujours sur le jeu et le comportement sur la glace, jamais sur le physique, l'origine ou la vie privée." },
+]
+
+export const DEFAULT_LENGTH: LengthKey = 'article'
+export const DEFAULT_SPICE: SpiceKey = 'piquant'
