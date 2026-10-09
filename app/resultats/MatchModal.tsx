@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useLeagueTeams } from '@/lib/useLeagueTeams'
 
 const CLUB_BLUE = '#003F6E'
 
@@ -10,6 +11,21 @@ type ResultRow = { id: string; training_id: string; score_noir: number; score_bl
 type Highlight = { id: string; result_id: string; text: string; position: number }
 type Challenge = { id: string; icon: string; title: string; description: string; points: number; status: string }
 type ResultChallenge = { id: string; result_id: string; challenge_id: string; team: string }
+type LeaguePlayer = { id: string; first_name: string; last_name: string; team: string; position: string | null }
+type AttendanceRow = { id: string; player_id: string; status: string; team: string | null }
+type TeamKey = 'noir' | 'blanc'
+
+function positionLetter(pos: string | null) {
+  if (pos === 'gardien') return 'G'
+  if (pos === 'defenseur') return 'D'
+  return 'A'
+}
+
+function positionRank(pos: string | null) {
+  if (pos === 'gardien') return 0
+  if (pos === 'defenseur') return 1
+  return 2
+}
 
 type Props = {
   training: Training
@@ -23,6 +39,12 @@ type Props = {
 
 export default function MatchModal({ training, result, highlights, resultChallenges, challenges, onClose, onSaved }: Props) {
   const supabase = createClient()
+  const teams = useLeagueTeams()
+  const [leaguePlayers, setLeaguePlayers] = useState<LeaguePlayer[]>([])
+  const [initialAttendance, setInitialAttendance] = useState<AttendanceRow[]>([])
+  const [roster, setRoster] = useState<Record<string, TeamKey>>({})
+  const [rosterLoading, setRosterLoading] = useState(true)
+  const [playerToAdd, setPlayerToAdd] = useState('')
   const [scoreNoir, setScoreNoir] = useState(result ? String(result.score_noir) : '')
   const [scoreBlanc, setScoreBlanc] = useState(result ? String(result.score_blanc) : '')
   const [highlightInputs, setHighlightInputs] = useState<string[]>(
@@ -40,6 +62,96 @@ export default function MatchModal({ training, result, highlights, resultChallen
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    async function loadRoster() {
+      const [playersRes, attendanceRes] = await Promise.all([
+        supabase.from('players').select('id, first_name, last_name, team, position').order('first_name', { ascending: true }),
+        supabase.from('attendance').select('id, player_id, status, team').eq('training_id', training.id),
+      ])
+      const players = (playersRes.data || []) as LeaguePlayer[]
+      const rows = (attendanceRes.data || []) as AttendanceRow[]
+      const initial: Record<string, TeamKey> = {}
+      rows
+        .filter((r) => r.status === 'present')
+        .forEach((r) => {
+          const p = players.find((pl) => pl.id === r.player_id)
+          initial[r.player_id] = ((r.team ?? p?.team) === 'blanc' ? 'blanc' : 'noir')
+        })
+      setLeaguePlayers(players)
+      setInitialAttendance(rows)
+      setRoster(initial)
+      setRosterLoading(false)
+    }
+    loadRoster()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [training.id])
+
+  const rosterByTeam = useMemo(() => {
+    const byTeam: Record<TeamKey, LeaguePlayer[]> = { noir: [], blanc: [] }
+    Object.entries(roster).forEach(([playerId, team]) => {
+      const p = leaguePlayers.find((pl) => pl.id === playerId)
+      if (p) byTeam[team].push(p)
+    })
+    const sortFn = (a: LeaguePlayer, b: LeaguePlayer) =>
+      positionRank(a.position) - positionRank(b.position) || a.first_name.localeCompare(b.first_name)
+    byTeam.noir.sort(sortFn)
+    byTeam.blanc.sort(sortFn)
+    return byTeam
+  }, [roster, leaguePlayers])
+
+  const absentPlayers = useMemo(
+    () => leaguePlayers.filter((p) => !roster[p.id]),
+    [leaguePlayers, roster]
+  )
+
+  function handleAddPlayer() {
+    if (!playerToAdd) return
+    const p = leaguePlayers.find((pl) => pl.id === playerToAdd)
+    if (!p) return
+    setRoster((prev) => ({ ...prev, [p.id]: p.team === 'blanc' ? 'blanc' : 'noir' }))
+    setPlayerToAdd('')
+  }
+
+  function handleRemovePlayer(playerId: string) {
+    setRoster((prev) => {
+      const copy = { ...prev }
+      delete copy[playerId]
+      return copy
+    })
+  }
+
+  function handleSwapTeam(playerId: string) {
+    setRoster((prev) => ({ ...prev, [playerId]: prev[playerId] === 'noir' ? 'blanc' : 'noir' }))
+  }
+
+  async function saveRoster(): Promise<string | null> {
+    const toUpsert: { training_id: string; player_id: string; status: string; team: string }[] = []
+    Object.entries(roster).forEach(([playerId, team]) => {
+      const existing = initialAttendance.find((r) => r.player_id === playerId)
+      if (!existing || existing.status !== 'present' || existing.team !== team) {
+        toUpsert.push({ training_id: training.id, player_id: playerId, status: 'present', team })
+      }
+    })
+    if (toUpsert.length > 0) {
+      const { error: upsertError } = await supabase
+        .from('attendance')
+        .upsert(toUpsert, { onConflict: 'training_id,player_id' })
+      if (upsertError) return upsertError.message
+    }
+
+    const removedIds = initialAttendance
+      .filter((r) => r.status === 'present' && !roster[r.player_id])
+      .map((r) => r.id)
+    if (removedIds.length > 0) {
+      const { error: removeError } = await supabase
+        .from('attendance')
+        .update({ status: 'forfait' })
+        .in('id', removedIds)
+      if (removeError) return removeError.message
+    }
+    return null
+  }
 
   function toggleTeam(challengeId: string, team: 'noir' | 'blanc') {
     setSelections((prev) => ({
@@ -115,6 +227,14 @@ export default function MatchModal({ training, result, highlights, resultChallen
       await supabase.from('result_challenges').insert(challengeRows)
     }
 
+    const rosterError = await saveRoster()
+    if (rosterError) {
+      setError(`Résultat enregistré, mais la liste des joueurs n'a pas pu être mise à jour : ${rosterError}`)
+      setSaving(false)
+      onSaved()
+      return
+    }
+
     setSaving(false)
     onSaved()
     onClose()
@@ -185,6 +305,83 @@ export default function MatchModal({ training, result, highlights, resultChallen
               />
             </div>
           </div>
+
+          <div style={{ fontSize: 12, fontWeight: 'bold', color: '#888', letterSpacing: 0.5, marginBottom: 10 }}>
+            JOUEURS AYANT PARTICIPÉ ({Object.keys(roster).length})
+          </div>
+          <div style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>
+            Ajoute les joueurs venus sans s&apos;être inscrits, retire ceux qui ne sont pas venus. Seuls les joueurs listés ici comptent ce match dans leurs stats.
+          </div>
+
+          {rosterLoading ? (
+            <div style={{ fontSize: 13, color: '#999', marginBottom: 24 }}>Chargement des joueurs…</div>
+          ) : (
+            <>
+              {(['noir', 'blanc'] as TeamKey[]).map((teamKey) => {
+                const list = rosterByTeam[teamKey]
+                const teamName = teamKey === 'noir' ? teams.noirName : teams.blancName
+                const teamColor = teamKey === 'noir' ? teams.noirColor : teams.blancColor
+                const otherName = teamKey === 'noir' ? teams.blancName : teams.noirName
+                return (
+                  <div key={teamKey} style={{ border: '1px solid #eee', borderRadius: 14, padding: 12, marginBottom: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 'bold', fontSize: 14, marginBottom: list.length > 0 ? 8 : 0 }}>
+                      <span style={{ width: 12, height: 12, borderRadius: '50%', background: teamColor, border: '1px solid #1A1A1A', display: 'inline-block' }} />
+                      {teamName} · {list.length}
+                    </div>
+                    {list.length === 0 && <div style={{ fontSize: 13, color: '#999', marginTop: 6 }}>Aucun joueur</div>}
+                    {list.map((p) => (
+                      <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderTop: '1px solid #f3f3f3' }}>
+                        <span style={{ width: 22, height: 22, borderRadius: 6, background: '#EAF1FB', color: CLUB_BLUE, fontSize: 11, fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          {positionLetter(p.position)}
+                        </span>
+                        <span style={{ flex: 1, fontSize: 14 }}>{p.first_name} {p.last_name}</span>
+                        <button
+                          type="button"
+                          title={`Passer chez ${otherName}`}
+                          onClick={() => handleSwapTeam(p.id)}
+                          style={{ height: 30, padding: '0 10px', borderRadius: 8, border: '1px solid #ddd', background: '#fff', cursor: 'pointer', fontSize: 13 }}
+                        >
+                          ⇄
+                        </button>
+                        <button
+                          type="button"
+                          title="Retirer du match"
+                          onClick={() => handleRemovePlayer(p.id)}
+                          style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid #ddd', background: '#fff', cursor: 'pointer', color: '#B23A2E' }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })}
+
+              <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+                <select
+                  value={playerToAdd}
+                  onChange={(e) => setPlayerToAdd(e.target.value)}
+                  style={{ flex: 1, minWidth: 0, background: '#F5F5F5', border: 'none', borderRadius: 10, padding: 12, fontSize: 14 }}
+                >
+                  <option value="">Ajouter un joueur…</option>
+                  {absentPlayers.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.first_name} {p.last_name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={handleAddPlayer}
+                  disabled={!playerToAdd}
+                  className="blm-btn-primary"
+                  style={{ padding: '0 16px', opacity: playerToAdd ? 1 : 0.5 }}
+                >
+                  + Ajouter
+                </button>
+              </div>
+            </>
+          )}
 
           <div style={{ fontSize: 12, fontWeight: 'bold', color: '#888', letterSpacing: 0.5, marginBottom: 10 }}>FAITS SAILLANTS</div>
           {highlightInputs.map((h, i) => (
