@@ -41,6 +41,7 @@ type AttendanceRow = {
   player_id: string
   status: string
   team: string | null
+  brings_beer?: boolean | null
   players: { first_name: string; last_name: string; team: string; position: string | null; is_hybrid: boolean | null } | null
 }
 
@@ -152,11 +153,20 @@ function CalendarPageInner() {
       return trainingsData && trainingsData.length > 0 ? [trainingsData[0].id] : []
     })
 
-    const { data: attendanceData } = await supabase
+    const withBeer = await supabase
       .from('attendance')
-      .select('id, training_id, player_id, status, team, players(first_name, last_name, team, position, is_hybrid)')
+      .select('id, training_id, player_id, status, team, brings_beer, players(first_name, last_name, team, position, is_hybrid)')
 
-    setAttendance((attendanceData as unknown as AttendanceRow[]) || [])
+    let attendanceData: unknown = withBeer.data
+    if (withBeer.error) {
+      // Colonne brings_beer pas encore créée : on charge les présences sans l'info du pack
+      const withoutBeer = await supabase
+        .from('attendance')
+        .select('id, training_id, player_id, status, team, players(first_name, last_name, team, position, is_hybrid)')
+      attendanceData = withoutBeer.data
+    }
+
+    setAttendance((attendanceData as AttendanceRow[] | null) || [])
     setPositionOverrides({})
 
     if (meData?.league_id) {
@@ -220,7 +230,36 @@ function CalendarPageInner() {
       { training_id: trainingId, player_id: me.id, status, team: me.position === 'gardien' ? null : me.team },
       { onConflict: 'training_id,player_id' }
     )
+    if (status === 'forfait') {
+      const myRow = attendance.find((a) => a.training_id === trainingId && a.player_id === me.id)
+      if (myRow?.brings_beer) {
+        await supabase.from('attendance').update({ brings_beer: false }).eq('id', myRow.id)
+      }
+    }
     loadAll()
+  }
+
+  async function handleToggleBeer(row: AttendanceRow) {
+    const { error } = await supabase.from('attendance').update({ brings_beer: !row.brings_beer }).eq('id', row.id)
+    if (error) {
+      alert("Impossible d'enregistrer pour le pack de bières : " + error.message)
+      return
+    }
+    loadAll()
+  }
+
+  function beerNames(trainingId: string) {
+    return attendance
+      .filter((a) => a.training_id === trainingId && a.status === 'present' && a.brings_beer)
+      .map((a) => a.players?.first_name)
+      .filter(Boolean) as string[]
+  }
+
+  function beerShareText(trainingId: string) {
+    const names = beerNames(trainingId)
+    return names.length > 0
+      ? ` 🍺 Pack assuré par ${names.join(' et ')}.`
+      : " 🍺 Toujours personne pour ramener le pack !"
   }
 
   async function createTraining(e: React.FormEvent) {
@@ -356,7 +395,7 @@ function CalendarPageInner() {
               label={nextPendingCount > 0 ? `Relancer (${nextPendingCount} en attente)` : 'Relancer les joueurs'}
               title={`Entraînement ${new Date(nextTraining.date_time).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`}
               path={`/calendar?training=${nextTraining.id}`}
-              excerpt={`⏰ Entraînement ${new Date(nextTraining.date_time).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} à ${new Date(nextTraining.date_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} (${nextTraining.location}).${nextPendingCount > 0 ? ` ${pendingLabel(nextPendingNames)}` : ''} Clique pour te déclarer présent ou forfait en 1 clic 👇`}
+              excerpt={`⏰ Entraînement ${new Date(nextTraining.date_time).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} à ${new Date(nextTraining.date_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} (${nextTraining.location}).${nextPendingCount > 0 ? ` ${pendingLabel(nextPendingNames)}` : ''}${beerShareText(nextTraining.id)} Clique pour te déclarer présent ou forfait en 1 clic 👇`}
             />
           </div>
         )}
@@ -416,6 +455,8 @@ function CalendarPageInner() {
           const isExpanded = (expandedTrainings || []).includes(training.id)
           const pill = statusPill(myRow?.status)
           const trainingPendingNames = pendingNames(training.id)
+          const trainingBeerNames = beerNames(training.id)
+          const iBringBeer = !!myRow?.brings_beer
           const pendingCount = trainingPendingNames.length
 
           return (
@@ -447,7 +488,7 @@ function CalendarPageInner() {
                     <ShareButton
                       title={`Entraînement ${new Date(training.date_time).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`}
                       path={`/calendar?training=${training.id}`}
-                      excerpt={`⏰ Entraînement ${new Date(training.date_time).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} à ${new Date(training.date_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} (${training.location}).${pendingCount > 0 ? ` ${pendingLabel(trainingPendingNames)}` : ''} Clique pour te déclarer présent ou forfait en 1 clic 👇`}
+                      excerpt={`⏰ Entraînement ${new Date(training.date_time).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} à ${new Date(training.date_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} (${training.location}).${pendingCount > 0 ? ` ${pendingLabel(trainingPendingNames)}` : ''}${beerShareText(training.id)} Clique pour te déclarer présent ou forfait en 1 clic 👇`}
                     />
                   )}
                   <button
@@ -513,6 +554,9 @@ function CalendarPageInner() {
                     {pill.text}
                   </span>
                   <span><strong>{presents.length}</strong> présent(s)</span>
+                  {trainingBeerNames.length > 0 && (
+                    <span style={{ color: '#8A6D1A' }}>· 🍺 {trainingBeerNames.join(', ')}</span>
+                  )}
                 </div>
               )}
 
@@ -547,6 +591,48 @@ function CalendarPageInner() {
                       >
                         ✕ Forfait
                       </button>
+                    </div>
+
+                    {myRow?.status === 'present' && (
+                      <button
+                        onClick={() => handleToggleBeer(myRow)}
+                        style={{
+                          width: '100%', marginTop: 10, padding: '10px 12px', borderRadius: 10, cursor: 'pointer', fontWeight: 600,
+                          border: `1px solid ${CLUB_GOLD}`,
+                          background: iBringBeer ? CLUB_GOLD : '#fff',
+                          color: iBringBeer ? '#fff' : '#8A6D1A',
+                        }}
+                      >
+                        {iBringBeer
+                          ? "🍺 C'est moi qui ramène le pack ✓"
+                          : trainingBeerNames.length > 0
+                          ? '🍺 Je ramène aussi un pack'
+                          : '🍺 Je ramène le pack de bières'}
+                      </button>
+                    )}
+                    {iBringBeer && (
+                      <div style={{ fontSize: 12, color: '#888', marginTop: 6, textAlign: 'center' }}>
+                        Clique à nouveau pour annuler.
+                      </div>
+                    )}
+                  </div>
+
+                  <div
+                    className="blm-subcard"
+                    style={{
+                      marginBottom: 10, display: 'flex', alignItems: 'center', gap: 10,
+                      background: trainingBeerNames.length > 0 ? '#FBF3DD' : '#fff',
+                    }}
+                  >
+                    <span style={{ fontSize: 22 }}>🍺</span>
+                    <div style={{ fontSize: 14, lineHeight: 1.4 }}>
+                      {trainingBeerNames.length > 0 ? (
+                        <>
+                          <strong>Pack assuré</strong> par {trainingBeerNames.join(', ')}. Merci {trainingBeerNames.length > 1 ? 'à eux' : 'à lui'} !
+                        </>
+                      ) : (
+                        <span style={{ color: '#666' }}>Personne ne s&apos;est encore proposé pour ramener le pack de bières.</span>
+                      )}
                     </div>
                   </div>
 
