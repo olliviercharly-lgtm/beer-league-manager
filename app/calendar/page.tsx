@@ -9,6 +9,7 @@ import NavBar from '@/app/components/NavBar'
 import ShareButton from '@/app/components/ShareButton'
 import { SkeletonList } from '@/app/components/SkeletonCard'
 import { effectiveIsAdmin } from '@/lib/viewRole'
+import ForfaitModal from './ForfaitModal'
 
 const CLUB_BLUE = '#003F6E'
 const CLUB_GOLD = '#C9A227'
@@ -42,6 +43,7 @@ type AttendanceRow = {
   status: string
   team: string | null
   brings_beer?: boolean | null
+  forfait_reason?: string | null
   players: { first_name: string; last_name: string; team: string; position: string | null; is_hybrid: boolean | null } | null
 }
 
@@ -122,6 +124,7 @@ function CalendarPageInner() {
   const [editDate, setEditDate] = useState('')
   const [editLocation, setEditLocation] = useState('')
   const [positionOverrides, setPositionOverrides] = useState<Record<string, string>>({})
+  const [forfaitTrainingId, setForfaitTrainingId] = useState<string | null>(null)
 
   async function loadAll() {
     const { data: { user } } = await supabase.auth.getUser()
@@ -153,17 +156,20 @@ function CalendarPageInner() {
       return trainingsData && trainingsData.length > 0 ? [trainingsData[0].id] : []
     })
 
-    const withBeer = await supabase
-      .from('attendance')
-      .select('id, training_id, player_id, status, team, brings_beer, players(first_name, last_name, team, position, is_hybrid)')
-
-    let attendanceData: unknown = withBeer.data
-    if (withBeer.error) {
-      // Colonne brings_beer pas encore créée : on charge les présences sans l'info du pack
-      const withoutBeer = await supabase
-        .from('attendance')
-        .select('id, training_id, player_id, status, team, players(first_name, last_name, team, position, is_hybrid)')
-      attendanceData = withoutBeer.data
+    // On essaie d'abord avec toutes les colonnes optionnelles (pack de bières, motif de forfait),
+    // puis on retombe sur une requête plus simple si l'une d'elles n'existe pas encore en base.
+    const selects = [
+      'id, training_id, player_id, status, team, brings_beer, forfait_reason, players(first_name, last_name, team, position, is_hybrid)',
+      'id, training_id, player_id, status, team, brings_beer, players(first_name, last_name, team, position, is_hybrid)',
+      'id, training_id, player_id, status, team, players(first_name, last_name, team, position, is_hybrid)',
+    ]
+    let attendanceData: unknown = null
+    for (const sel of selects) {
+      const res = await supabase.from('attendance').select(sel)
+      if (!res.error) {
+        attendanceData = res.data
+        break
+      }
     }
 
     setAttendance((attendanceData as AttendanceRow[] | null) || [])
@@ -230,12 +236,34 @@ function CalendarPageInner() {
       { training_id: trainingId, player_id: me.id, status, team: me.position === 'gardien' ? null : me.team },
       { onConflict: 'training_id,player_id' }
     )
+    const myRow = attendance.find((a) => a.training_id === trainingId && a.player_id === me.id)
     if (status === 'forfait') {
-      const myRow = attendance.find((a) => a.training_id === trainingId && a.player_id === me.id)
       if (myRow?.brings_beer) {
         await supabase.from('attendance').update({ brings_beer: false }).eq('id', myRow.id)
       }
+    } else if (myRow?.forfait_reason) {
+      // Retour en "Présent" : on efface l'ancien motif de forfait
+      await supabase
+        .from('attendance')
+        .update({ forfait_reason: null })
+        .eq('training_id', trainingId)
+        .eq('player_id', me.id)
     }
+    loadAll()
+  }
+
+  async function confirmForfait(trainingId: string, reason: string | null) {
+    if (!me) return
+    await setMyStatus(trainingId, 'forfait')
+    const { error } = await supabase
+      .from('attendance')
+      .update({ forfait_reason: reason })
+      .eq('training_id', trainingId)
+      .eq('player_id', me.id)
+    if (error && reason) {
+      alert("Forfait enregistré, mais impossible d'enregistrer le motif : " + error.message)
+    }
+    setForfaitTrainingId(null)
     loadAll()
   }
 
@@ -582,7 +610,7 @@ function CalendarPageInner() {
                         ✓ Présent
                       </button>
                       <button
-                        onClick={() => setMyStatus(training.id, 'forfait')}
+                        onClick={() => setForfaitTrainingId(training.id)}
                         style={{
                           flex: 1, padding: '10px 12px', borderRadius: 10, border: '1px solid #B23A2E', cursor: 'pointer', fontWeight: 600,
                           background: myRow?.status === 'forfait' ? '#B23A2E' : '#fff',
@@ -613,6 +641,21 @@ function CalendarPageInner() {
                     {iBringBeer && (
                       <div style={{ fontSize: 12, color: '#888', marginTop: 6, textAlign: 'center' }}>
                         Clique à nouveau pour annuler.
+                      </div>
+                    )}
+
+                    {myRow?.status === 'forfait' && (
+                      <div style={{ marginTop: 10, fontSize: 13.5, color: '#555', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <span>💬</span>
+                        <span style={{ flex: 1, fontStyle: myRow.forfait_reason ? 'italic' : 'normal' }}>
+                          {myRow.forfait_reason ? `« ${myRow.forfait_reason} »` : 'Aucun motif indiqué.'}
+                        </span>
+                        <button
+                          onClick={() => setForfaitTrainingId(training.id)}
+                          style={{ background: 'none', border: 'none', color: CLUB_BLUE, cursor: 'pointer', fontSize: 12.5, fontWeight: 600, padding: 0, whiteSpace: 'nowrap' }}
+                        >
+                          ✏️ {myRow.forfait_reason ? 'Changer' : 'Ajouter un motif'}
+                        </button>
                       </div>
                     )}
                   </div>
@@ -673,8 +716,17 @@ function CalendarPageInner() {
                               <div style={{ fontSize: 13, color: '#999' }}>Aucun joueur</div>
                             ) : block.key === 'forfaits' ? (
                               block.rows.map((r) => (
-                                <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 14 }}>
-                                  <span>{r.players?.first_name} {r.players?.last_name}</span>
+                                <div key={r.id} style={{ padding: '8px 0', borderBottom: '1px solid #eee' }}>
+                                  <div style={{ fontWeight: 600, fontSize: 14.5 }}>
+                                    {r.players?.first_name} {r.players?.last_name}
+                                  </div>
+                                  {r.forfait_reason ? (
+                                    <div style={{ fontSize: 13, color: '#555', fontStyle: 'italic', marginTop: 2, lineHeight: 1.35 }}>
+                                      💬 « {r.forfait_reason} »
+                                    </div>
+                                  ) : (
+                                    <div style={{ fontSize: 12.5, color: '#aaa', marginTop: 2 }}>Pas d&apos;excuse… suspect.</div>
+                                  )}
                                 </div>
                               ))
                             ) : block.key === 'gardiens' ? (
@@ -789,6 +841,14 @@ function CalendarPageInner() {
           )
         })}
       </div>
+
+      {forfaitTrainingId && (
+        <ForfaitModal
+          initialReason={attendance.find((a) => a.training_id === forfaitTrainingId && a.player_id === me?.id)?.forfait_reason}
+          onConfirm={(reason) => confirmForfait(forfaitTrainingId, reason)}
+          onClose={() => setForfaitTrainingId(null)}
+        />
+      )}
     </div>
   )
 }
